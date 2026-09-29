@@ -28,7 +28,7 @@ git remote add origin https://github.com/Wasama1904/Recommendation-System-App.gi
 git push -u origin main
 
 ## Azure DevOps
-git remote add azure https://Recommendation-System-App@dev.azure.com/Recommendation-System-App/SME-Recommendation%20System%20App/_git/SME-Recommendation%20System%20App
+git remote add azure https://Recommendation-System-App@dev.azure.com/Recommendation-System-App/SME-Recommendation%20System%20App/_git/Recommendation-System-App
 git push azure main
 
 Include AB# task links in commits.
