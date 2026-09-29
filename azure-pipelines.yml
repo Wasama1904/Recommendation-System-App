@@ -1,0 +1,15 @@
+trigger:
+- main
+pool:
+  vmImage: 'ubuntu-latest'
+steps:
+- task: JavaToolInstaller@0
+  inputs:
+    versionSpec: '17'
+    jdkArchitectureOption: 'x64'
+    jdkSourceOption: 'PreInstalled'
+- script: |
+    chmod +x gradlew
+    ./gradlew build
+    ./gradlew test
+  displayName: 'Build and Test Android'
