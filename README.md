@@ -1,3 +1,5 @@
+GOOD DAY
+
 # SME South Africa - Personalised Business Feed App
 Task 2 - XISD6329
 
