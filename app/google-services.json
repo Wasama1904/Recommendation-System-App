@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "1047444059020",
+    "project_id": "sme-recommendation-system-app",
+    "storage_bucket": "sme-recommendation-system-app.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:1047444059020:android:e2c18e9da275e411aa5ca9",
+        "android_client_info": {
+          "package_name": "com.smesouthafrica.app"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyDQbS8lZYb2axT7_xnlL9Qka3fcH1OBvNI"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

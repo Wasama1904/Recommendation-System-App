@@ -3,48 +3,44 @@ package com.smesouthafrica.app
 import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
-import androidx.compose.material3.*
-import androidx.compose.runtime.*
-import androidx.compose.ui.graphics.Color
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.remember
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
-import androidx.room.Room
-import com.smesouthafrica.app.data.AppDatabase
-import com.smesouthafrica.app.data.SampleData
+import com.google.firebase.FirebaseApp
+import com.smesouthafrica.app.data.FirebaseRepo
 import com.smesouthafrica.app.ui.*
-import kotlinx.coroutines.CoroutineScope
+import com.smesouthafrica.app.ui.theme.SMESouthAfricaTheme
 import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
 
 class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-        val db = Room.databaseBuilder(this, AppDatabase::class.java, "sme.db").allowMainThreadQueries().build()
-        // Seed data - fulfills 10+ records requirement
-        CoroutineScope(Dispatchers.IO).launch {
-            if (db.dao().getAllArticles().isEmpty()) {
-                db.dao().insertCategories(SampleData.categories)
-                db.dao().insertArticles(SampleData.articles)
-            }
-        }
+        FirebaseApp.initializeApp(this)
         setContent {
-            MaterialTheme(colorScheme = lightColorScheme(primary = Color(0xFF1E8E3E))) {
+            SMESouthAfricaTheme {
                 val nav = rememberNavController()
-                var userId by remember { mutableStateOf(1) } // simple single user for demo
+                val repo = remember { FirebaseRepo() }
+                LaunchedEffect(Unit) {
+                    withContext(Dispatchers.IO) {
+                        repo.seedIfEmpty()
+                    }
+                }
                 NavHost(navController = nav, startDestination = "splash") {
-                    composable("splash") { SplashScreen { nav.navigate("login") } }
-                    composable("login") { LoginScreen(onLogin = { nav.navigate("home") }, onRegister = { nav.navigate("register") }) }
-                    composable("register") { RegisterScreen(onDone = { nav.navigate("interests") }) }
-                    composable("interests") { InterestScreen(db = db, userId = userId, onDone = { nav.navigate("home") }) }
-                    composable("home") { HomeScreen(db = db, userId = userId, nav = nav) }
+                    composable("splash") { SplashScreen { nav.navigate("login") { popUpTo("splash") { inclusive = true } } } }
+                    composable("login") { LoginScreen(repo = repo, onLogin = { nav.navigate("home") { popUpTo("login") { inclusive = true } } }, onRegister = { nav.navigate("register") }) }
+                    composable("register") { RegisterScreen(repo = repo, onDone = { nav.navigate("interests") }) }
+                    composable("interests") { InterestScreen(repo = repo, onDone = { nav.navigate("home") { popUpTo("interests") { inclusive = true } } }) }
+                    composable("home") { HomeScreen(repo = repo, nav = nav) }
                     composable("article/{id}") { backStack ->
                         val id = backStack.arguments?.getString("id")?.toIntOrNull() ?: 1
-                        ArticleDetailScreen(db = db, userId = userId, articleId = id, nav = nav)
+                        ArticleDetailScreen(repo = repo, articleId = id, nav = nav)
                     }
-                    composable("search") { SearchScreen(db = db, userId = userId, nav = nav) }
-                    composable("saved") { SavedScreen(db = db, userId = userId, nav = nav) }
-                    composable("profile") { ProfileScreen(db = db, userId = userId, nav = nav) }
+                    composable("search") { SearchScreen(repo = repo, nav = nav) }
+                    composable("saved") { SavedScreen(repo = repo, nav = nav) }
+                    composable("profile") { ProfileScreen(repo = repo, nav = nav) }
                 }
             }
         }

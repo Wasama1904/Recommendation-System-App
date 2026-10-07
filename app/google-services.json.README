@@ -1,0 +1,7 @@
+PLACE YOUR google-services.json HERE
+
+1. Download from Firebase Console > Project Settings > Your App > google-services.json
+2. Rename this file to google-services.json (or add alongside)
+3. Place in this folder: app/
+
+Package name must be: com.smesouthafrica.app
