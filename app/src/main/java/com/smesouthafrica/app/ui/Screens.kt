@@ -23,8 +23,13 @@ import com.smesouthafrica.app.engine.RecommendationEngine
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 
+// Primary SME South Africa Brand Color
 private val SME_Green = Color(0xFF1E8E3E)
 
+/**
+ * Animated Splash Screen displaying app branding and logo.
+ * Delays briefly using [LaunchedEffect] before triggering callback navigation.
+ */
 @Composable fun SplashScreen(onFinish: () -> Unit) {
     LaunchedEffect(Unit) { delay(1800); onFinish() }
     Box(Modifier.fillMaxSize().background(Color.White), contentAlignment = Alignment.Center) {
@@ -40,6 +45,10 @@ private val SME_Green = Color(0xFF1E8E3E)
     }
 }
 
+/**
+ * User Login Screen featuring input validation (email format & minimum length checks).
+ * Authenticates against Firebase Auth with fallback support for offline demo credentials.
+ */
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable fun LoginScreen(repo: FirebaseRepo, onLogin: () -> Unit, onRegister: () -> Unit) {
     var email by remember { mutableStateOf("") }; var pass by remember { mutableStateOf("") }
@@ -80,6 +89,10 @@ private val SME_Green = Color(0xFF1E8E3E)
     }
 }
 
+/**
+ * User Registration Screen with real-time password strength progress indicator
+ * and password match verification.
+ */
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable fun RegisterScreen(repo: FirebaseRepo, onDone: () -> Unit) {
     var name by remember { mutableStateOf("") }; var email by remember { mutableStateOf("") }; var pass by remember { mutableStateOf("") }; var confirm by remember { mutableStateOf("") }
@@ -115,6 +128,10 @@ private val SME_Green = Color(0xFF1E8E3E)
     }
 }
 
+/**
+ * Onboarding Interest Selection Screen.
+ * Stores explicit category preferences into Cloud Firestore to establish baseline user interests.
+ */
 @Composable fun InterestScreen(repo: FirebaseRepo, onDone: () -> Unit) {
     val selected = remember { mutableStateListOf<Category>() }
     val scope = rememberCoroutineScope(); var loading by remember { mutableStateOf(false) }
@@ -150,6 +167,10 @@ private val SME_Green = Color(0xFF1E8E3E)
     }
 }
 
+/**
+ * Personalised Home Feed Screen.
+ * Renders articles sorted in real-time by Recommendation Score computed via [RecommendationEngine].
+ */
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable fun HomeScreen(repo: FirebaseRepo, nav: NavController) {
     var articles by remember { mutableStateOf<List<ScoredArticle>>(emptyList()) }
@@ -158,6 +179,7 @@ private val SME_Green = Color(0xFF1E8E3E)
     val scope = rememberCoroutineScope()
     val userId = repo.getCurrentUserId()
     
+    // Loads articles and recalculates scoring upon refresh or screen entry
     fun load() {
         scope.launch {
             isLoading = true
@@ -246,6 +268,10 @@ private val SME_Green = Color(0xFF1E8E3E)
     }
 }
 
+/**
+ * Article Detail View Screen.
+ * Automatically logs a READ interaction event to Cloud Firestore and allows saving or liking the content.
+ */
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable fun ArticleDetailScreen(repo: FirebaseRepo, articleId: Int, nav: NavController) {
     var article by remember { mutableStateOf<Article?>(null) }
@@ -253,11 +279,14 @@ private val SME_Green = Color(0xFF1E8E3E)
     var isLiked by remember { mutableStateOf(false) }
     val scope = rememberCoroutineScope()
     val userId = repo.getCurrentUserId()
+    
+    // Log reading event with duration on screen view
     LaunchedEffect(articleId) {
         article = repo.getArticles().find { it.articleId == articleId }
         isSaved = articleId in repo.getSavedIds(userId)
         scope.launch { repo.logBehaviour(userId, articleId, "READ", 85) }
     }
+    
     Scaffold(bottomBar = { BottomBar(nav, "home") }, topBar = { TopAppBar(title = { Text("Article") }, navigationIcon = { IconButton(onClick = { nav.popBackStack() }) { Icon(Icons.Default.ArrowBack, null) } }) }) { pad ->
         article?.let { a ->
             LazyColumn(Modifier.padding(pad).padding(20.dp)) {
@@ -317,6 +346,10 @@ private val SME_Green = Color(0xFF1E8E3E)
     }
 }
 
+/**
+ * Search and Category Filtering Screen.
+ * Captures query logs to Firestore searchLogs to refine recommendation scores.
+ */
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable fun SearchScreen(repo: FirebaseRepo, nav: NavController) {
     var query by remember { mutableStateOf("") }
@@ -325,7 +358,9 @@ private val SME_Green = Color(0xFF1E8E3E)
     var recentSearches by remember { mutableStateOf<List<SearchLog>>(emptyList()) }
     val scope = rememberCoroutineScope()
     val userId = repo.getCurrentUserId()
+    
     LaunchedEffect(Unit) { allArticles = repo.getArticles(); results = allArticles; recentSearches = repo.getSearchLogs(userId) }
+    
     Scaffold(bottomBar = { BottomBar(nav, "search") }, topBar = { TopAppBar(title = { Text("Explore") }) }) { pad ->
         Column(Modifier.padding(pad).padding(16.dp)) {
             OutlinedTextField(value = query, onValueChange = {
@@ -365,16 +400,22 @@ private val SME_Green = Color(0xFF1E8E3E)
     }
 }
 
+/**
+ * Saved Articles / Personal Library Screen.
+ * Queries bookmarked articles from Cloud Firestore savedArticles collection.
+ */
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable fun SavedScreen(repo: FirebaseRepo, nav: NavController) {
     var savedArticles by remember { mutableStateOf<List<Article>>(emptyList()) }
     var isLoading by remember { mutableStateOf(true) }
     val userId = repo.getCurrentUserId()
+    
     LaunchedEffect(Unit) {
         val all = repo.getArticles()
         savedArticles = repo.getSavedArticles(userId, all)
         isLoading = false
     }
+    
     Scaffold(bottomBar = { BottomBar(nav, "saved") }, topBar = { TopAppBar(title = { Text("Saved Articles") }) }) { pad ->
         if (isLoading) Box(Modifier.fillMaxSize().padding(pad), contentAlignment = Alignment.Center) { CircularProgressIndicator(color = SME_Green) }
         else if (savedArticles.isEmpty()) {
@@ -401,11 +442,17 @@ private val SME_Green = Color(0xFF1E8E3E)
     }
 }
 
+/**
+ * User Profile and Settings Screen.
+ * Displays user info, stored interest weights, settings toggles, scoring formula breakdown, and logout button.
+ */
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable fun ProfileScreen(repo: FirebaseRepo, nav: NavController) {
     var prefs by remember { mutableStateOf<List<Preference>>(emptyList()) }
     val userId = repo.getCurrentUserId()
+    
     LaunchedEffect(Unit) { prefs = repo.getPreferences(userId) }
+    
     Scaffold(bottomBar = { BottomBar(nav, "profile") }, topBar = { TopAppBar(title = { Text("Profile") }) }) { pad ->
         LazyColumn(Modifier.padding(pad).padding(16.dp)) {
             item {
@@ -456,6 +503,9 @@ private val SME_Green = Color(0xFF1E8E3E)
     }
 }
 
+/**
+ * Reusable Navigation Bar component displaying standard bottom navigation destinations.
+ */
 @Composable fun BottomBar(nav: NavController, current: String) {
     NavigationBar(containerColor = Color.White) {
         NavigationBarItem(icon = { Icon(Icons.Default.Home, null) }, label = { Text("Home") }, selected = current == "home", onClick = { nav.navigate("home") }, colors = NavigationBarItemDefaults.colors(selectedIconColor = SME_Green, selectedTextColor = SME_Green, indicatorColor = Color(0xFFD4F0DA)))

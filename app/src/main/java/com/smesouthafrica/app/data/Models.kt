@@ -1,5 +1,17 @@
 package com.smesouthafrica.app.data
 
+/**
+ * Core Data Transfer Objects (DTOs) for the Recommendation System.
+ * 
+ * These models directly map to Cloud Firestore document collections:
+ * - Articles -> 'articles' collection
+ * - Categories -> 'categories' collection
+ * - Preferences -> 'preferences' collection (user-selected interests)
+ * - BehaviourLog -> 'behaviourLogs' collection (implicit interaction tracking)
+ * - SearchLog -> 'searchLogs' collection (user query tracking)
+ * - SavedArticle -> 'savedArticles' collection (bookmarks)
+ */
+
 data class Article(
     val articleId: Int = 0,
     val title: String = "",
@@ -10,16 +22,53 @@ data class Article(
     val imageEmoji: String = "📄",
     val readTime: String = "5 min",
     val author: String = "SME South Africa",
-    val score: Int = 0
+    val score: Int = 0 // Dynamic recommendation score computed client-side
 )
 
-data class Category(val categoryId: Int = 0, val name: String = "", val icon: String = "📁")
-data class Preference(val userId: String = "", val categoryId: Int = 0, val categoryName: String = "", val weight: Int = 5)
-data class BehaviourLog(val userId: String = "", val articleId: Int = 0, val eventType: String = "", val duration: Int = 0, val timestamp: Long = System.currentTimeMillis())
-data class SearchLog(val userId: String = "", val query: String = "", val timestamp: Long = System.currentTimeMillis())
-data class SavedArticle(val userId: String = "", val articleId: Int = 0)
-data class ScoredArticle(val article: Article, val score: Int)
+data class Category(
+    val categoryId: Int = 0,
+    val name: String = "",
+    val icon: String = "📁"
+)
 
+data class Preference(
+    val userId: String = "",
+    val categoryId: Int = 0,
+    val categoryName: String = "",
+    val weight: Int = 5 // User interest weight used in scoring
+)
+
+data class BehaviourLog(
+    val userId: String = "",
+    val articleId: Int = 0,
+    val eventType: String = "", // e.g. "READ", "LIKE", "SAVE", "CATEGORY_SELECTED"
+    val duration: Int = 0, // Reading time in seconds
+    val timestamp: Long = System.currentTimeMillis()
+)
+
+data class SearchLog(
+    val userId: String = "",
+    val query: String = "",
+    val timestamp: Long = System.currentTimeMillis()
+)
+
+data class SavedArticle(
+    val userId: String = "",
+    val articleId: Int = 0
+)
+
+/**
+ * Wrapper object linking an [Article] with its calculated recommendation score.
+ */
+data class ScoredArticle(
+    val article: Article,
+    val score: Int
+)
+
+/**
+ * Pre-seeded sample dataset ensuring 10+ records across categories and articles
+ * as required by the project specifications.
+ */
 object SampleData {
     val categories = listOf(
         Category(1,"Funding","💰"), Category(2,"Marketing","📣"), Category(3,"Tax","🧾"),
