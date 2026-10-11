@@ -1,49 +1,191 @@
-GOOD DAY
+# SME South Africa — Personalised Business Feed
 
-# SME South Africa - Personalised Business Feed App
-Task 2 - XISD6329
+> **Business made easier.** A smart Android app that learns what you care about and delivers relevant funding, marketing, tax, technology and compliance content for South African entrepreneurs.
 
-This is the mobile version of the recommendation system described in the report.
-Architecture: Mobile App -> REST API (concept) -> MySQL (Room) + MongoDB (Behaviour Logs)
+[[Android](https://img.shields.io/badge/Android-7.0%2B-brightgreen)]()
+[[Kotlin](https://img.shields.io/badge/Kotlin-1.9-purple)]()
+[[Jetpack Compose](https://img.shields.io/badge/Jetpack%20Compose-Material%203-blue)]()
+[[Firebase](https://img.shields.io/badge/Firebase-Auth%20%2B%20Firestore-orange)]()
+[[Region](https://img.shields.io/badge/Region-africa--south1-green)]()
 
-## Features implemented (per assignment checklist)
-- Android Studio project with Kotlin + Jetpack Compose
-- Runs on physical phone
-- 8 core screens: Splash, Login, Register, Interest Selection, Home Feed, Article Detail, Search/Explore, Saved, Profile
-- Database with 10+ records (12 articles, 9 categories)
-- Registration/Login
-- Recommendation engine with weighted scoring
-- Behaviour tracking: CLICK, READ, SAVE, LIKE, SEARCH, CATEGORY_SELECTED
-- GitHub + GitHub Actions + Azure DevOps
+### 📲 Repositories
 
-## Recommendation logic (from report)
-Score = Interest Match (+5) + Search Match (+4) + Reading History (+3) + Long Read (+4) + Same Category (+2) + Saved (+5) + Liked (+5)
+- **GitHub (Primary):** https://github.com/Wasama1904/Recommendation-System-App
+- **Azure DevOps (Mirror + Boards):** https://dev.azure.com/Recommendation-System-App/SME-Recommendation%20System%20App/_git/Recommendation-System-App
+- **Firebase Project:** `Recommendation-System-App` — Firestore in `africa-south1` (Cape Town)
 
-## How to run
-1. Open in Android Studio Hedgehog+
-2. Let Gradle sync
-3. Run on device
-4. Flow to demo: Register -> Select Funding+Technology -> Home shows those -> Search "funding" -> Read 2 funding articles -> Back to Home -> Funding articles now on top with higher scores
+---
 
-## GitHub
-git remote add origin https://github.com/Wasama1904/Recommendation-System-App.git
-git push -u origin main
+## ✨ What it does
 
-## Azure DevOps
-git remote add azure https://Recommendation-System-App@dev.azure.com/Recommendation-System-App/SME-Recommendation%20System%20App/_git/Recommendation-System-App
-git push azure main
+SME South Africa has 100,000+ monthly readers, but everyone sees the same generic content. This app fixes that with a transparent, on-device recommendation engine.
 
-Include AB# task links in commits.
+- Select your business interests (Funding, Marketing, Tax, Tech, etc.)
+- Search, read and save articles
+- Your feed re-orders in real-time based on your behaviour
+- No black box — you can see the relevance Score on every card
 
-## GitHub Actions already included
-.github/workflows/android.yml will build on every push.
+### Core Features
 
-## Video demo script
-1. Show Splash -> Login
-2. Show Register -> Interest selection (explain this is Preferences table)
-3. Show Home - Recommended for You with scores
-4. Open article - show READ log inserted
-5. Search "funding" - show SearchLogs
-6. Return to Home - show funding articles jumped to top - PROVES recommendation engine works
-7. Show Saved + Profile
-8. Show Room database inspector: App Inspection > Database Inspector - show 12 articles
+- **Personalised Feed** — Sorted by relevance Score
+- **Smart Recommendations** — Learns from interests, searches, reads, saves and likes
+- **Explore & Search** — Category filters + recent searches
+- **Saved Library** — Your personal offline-ready collection
+- **Dark Theme** — Full Material 3 light/dark support
+- **Profile & Settings** — Edit interests, notifications, newsletter, privacy
+- **Help & Support** — Dedicated help screen, no clutter
+
+---
+
+## 🧠 How the recommendation works
+
+Transparent scoring, not magic:
+
+```
+Score = Interest Match (+5)
+      + Search Match (+4)
+      + Reading History (+3 per read)
+      + Deep Read >60s (+4)
+      + Same Category (+2)
+      + Saved (+5)
+      + Liked (+5)
+```
+
+**Example:**
+You select Funding (+5), search "funding" (+4), read a Funding article for 85s (+3+4) = **Score 16** → Moves to top of your feed.
+
+All behaviour is stored in Firestore collections: `behaviourLogs`, `searchLogs`, `preferences`, `savedArticles`.
+
+---
+
+## 📱 Screenshots
+
+| Home Feed | Explore | Saved | Profile | Help |
+|-----------|---------|-------|---------|------|
+| Personalised greeting, Score badges, Trending | Category chips, Search that trains feed | Personal library | Real user data, Settings incl. Dark Theme | How scoring works, FAQ |
+
+> Screenshots from physical device — Dark Theme supported across all screens.
+
+---
+
+## 🛠️ Tech Stack
+
+- **Language:** Kotlin
+- **UI:** Jetpack Compose + Material 3
+- **Architecture:** MVVM + Three-Tier (App → Firebase → Firestore)
+- **Backend:** Firebase Auth (Email/Password), Cloud Firestore (africa-south1)
+- **Local:** Room for offline fallback, Firestore offline persistence
+- **CI/CD:** GitHub Actions (builds APK on push), Azure Pipelines mirror
+- **Min SDK:** 24 (Android 7.0) — Target 34
+
+**Database Collections (10+ records each):**
+- `articles` — 12 curated SME articles
+- `categories` — 9 business categories
+- `users`, `preferences`, `behaviourLogs`, `searchLogs`, `savedArticles`
+
+---
+
+## 🚀 Getting Started
+
+### 1. Clone
+
+```bash
+git clone https://github.com/Wasama1904/Recommendation-System-App.git
+cd Recommendation-System-App
+```
+
+### 2. Firebase Setup
+
+1. Create Firebase project: `Recommendation-System-App`
+2. Enable **Authentication > Email/Password**
+3. Enable **Firestore Database** in **africa-south1**, Test Mode
+4. Download `google-services.json` and place in `app/google-services.json`
+
+The app auto-seeds 12 articles + 9 categories on first launch if Firestore is empty.
+
+### 3. Run
+
+- Open in Android Studio Hedgehog or newer
+- Sync Gradle
+- Connect Android phone with USB Debugging
+- Click **Run**
+
+### 4. Build APK
+
+```bash
+./gradlew assembleDebug
+# APK at app/build/outputs/apk/debug/app-debug.apk
+```
+
+Or get it from **GitHub Actions > Artifacts**.
+
+---
+
+## 📂 Project Structure
+
+```
+Recommendation-System-App/
+├── app/src/main/java/com/smesouthafrica/app/
+│   ├── MainActivity.kt          # Navigation host
+│   ├── data/
+│   │   ├── Models.kt            # Article, Category, etc.
+│   │   └── FirebaseRepo.kt      # Firestore + Auth wrapper
+│   ├── engine/
+│   │   └── RecommendationEngine.kt
+│   ├── ui/
+│   │   ├── Screens.kt           # All Compose screens
+│   │   └── theme/Theme.kt       # Light/Dark Material 3 themes
+│   └── ...
+├── database/
+│   └── sme_database.sql         # MySQL version of schema
+├── docs/
+│   ├── SME_User_Manual_Professional.pdf
+│   └── SME_User_Manual_Simple.pdf
+├── .github/workflows/android.yml
+├── azure-pipelines.yml
+└── README.md
+```
+
+---
+
+## 🔐 Privacy & Security
+
+- Passwords hashed via Firebase Auth
+- Firestore rules in Test Mode for prototype (lock down for production)
+- No personal data sold — only interests, searches and reading behaviour used for recommendations
+- Region: `africa-south1` for low latency in SA
+
+---
+
+## 🤝 Contributing
+
+This is an open portfolio project. Issues and PRs welcome.
+
+1. Fork the repo
+2. Create branch: `git checkout -b feature/your-feature`
+3. Commit: `git commit -m "Add your feature"`
+4. Push: `git push origin feature/your-feature`
+5. Open PR
+
+---
+
+## 📄 License
+
+MIT — Free for educational and commercial use. SME South Africa content remains property of SME South Africa.
+
+---
+
+## 📬 Contact
+
+**Developer:** Wasama Makolo
+**Email:** wasama@email.com
+**GitHub:** [@Wasama1904](https://github.com/Wasama1904)
+**Project:** https://github.com/Wasama1904/Recommendation-System-App
+**Website:** https://smesouthafrica.co.za
+
+---
+
+<p align="center">
+  <b>SME South Africa — Business made easier.</b><br/>
+  Built with 💚 in Cape Town, South Africa
+</p>
