@@ -8,11 +8,12 @@
 [[Firebase](https://img.shields.io/badge/Firebase-Auth%20%2B%20Firestore-orange)]()
 [[Region](https://img.shields.io/badge/Region-africa--south1-green)]()
 
-### 📲 Repositories
+### 📲 Repositories & Documentation
 
 - **GitHub (Primary):** https://github.com/Wasama1904/Recommendation-System-App
 - **Azure DevOps (Mirror + Boards):** https://dev.azure.com/Recommendation-System-App/SME-Recommendation%20System%20App/_git/Recommendation-System-App
 - **Firebase Project:** `Recommendation-System-App` — Firestore in `africa-south1` (Cape Town)
+- **User Manual / Guide:** [📖 Download / View SME-User-Manual.pdf](SME-User-Manual.pdf)
 
 ---
 
@@ -137,11 +138,9 @@ Recommendation-System-App/
 │   │   ├── Screens.kt           # All Compose screens
 │   │   └── theme/Theme.kt       # Light/Dark Material 3 themes
 │   └── ...
+├── SME-User-Manual.pdf          # Official User Guide & Documentation
 ├── database/
 │   └── sme_database.sql         # MySQL version of schema
-├── docs/
-│   ├── SME_User_Manual_Professional.pdf
-│   └── SME_User_Manual_Simple.pdf
 ├── .github/workflows/android.yml
 ├── azure-pipelines.yml
 └── README.md
