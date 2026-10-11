@@ -62,7 +62,12 @@ All behaviour is stored in Firestore collections: `behaviourLogs`, `searchLogs`,
 
 | Home Feed | Explore | Saved | Profile | Help |
 |-----------|---------|-------|---------|------|
-| Personalised greeting, Score badges, Trending | Category chips, Search that trains feed | Personal library | Real user data, Settings incl. Dark Theme | How scoring works, FAQ |
+| <img width="412" height="878" alt="Screenshot 2026-10-11 215603" src="https://github.com/user-attachments/assets/964ae8e3-3af2-40e2-9c0d-b874dfce15c9" />
+ | <img width="408" height="880" alt="Screenshot 2026-10-11 215624" src="https://github.com/user-attachments/assets/4cc1ba23-3ff5-46c2-8b69-f52652e8a5f5" />
+ | <img width="410" height="879" alt="Screenshot 2026-10-11 215640" src="https://github.com/user-attachments/assets/944dda9f-7522-4bda-9cea-b665bcf86667" />
+ | <img width="411" height="879" alt="Screenshot 2026-10-11 215655" src="https://github.com/user-attachments/assets/d9f06229-70c2-491a-b0fb-345354cddac3" />
+ | <img width="405" height="878" alt="Screenshot 2026-10-11 215710" src="https://github.com/user-attachments/assets/2a2818a6-7a5a-454f-91c0-37424094fac3" />
+
 
 > Screenshots from physical device — Dark Theme supported across all screens.
 
@@ -177,15 +182,12 @@ MIT — Free for educational and commercial use. SME South Africa content remain
 
 ## 📬 Contact
 
-**Developer:** Wasama Makolo
-**Email:** wasama@email.com
-**GitHub:** [@Wasama1904](https://github.com/Wasama1904)
+**Developer:** Wasama Makolo (ST10451742) | Tinotenda Marumahoko (ST10457568) | Cameron Johannes (ST10454395)
 **Project:** https://github.com/Wasama1904/Recommendation-System-App
 **Website:** https://smesouthafrica.co.za
 
 ---
 
-<p align="center">
-  <b>SME South Africa — Business made easier.</b><br/>
-  Built with 💚 in Cape Town, South Africa
-</p>
+SME South Africa — Business made easier.
+Built with 💚 in Cape Town, South Africa
+
