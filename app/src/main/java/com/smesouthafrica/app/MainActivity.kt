@@ -29,7 +29,8 @@ class MainActivity : ComponentActivity() {
         FirebaseApp.initializeApp(this)
         
         setContent {
-            SMESouthAfricaTheme {
+            val darkTheme = AppSettings.isDarkTheme.value
+            SMESouthAfricaTheme(darkTheme = darkTheme) {
                 val nav = rememberNavController()
                 
                 // Retain instance of Firebase Repository across recompositions
@@ -51,7 +52,11 @@ class MainActivity : ComponentActivity() {
                         LoginScreen(repo = repo, onLogin = { nav.navigate("home") { popUpTo("login") { inclusive = true } } }, onRegister = { nav.navigate("register") })
                     }
                     composable("register") {
-                        RegisterScreen(repo = repo, onDone = { nav.navigate("interests") })
+                        RegisterScreen(
+                            repo = repo,
+                            onDone = { nav.navigate("interests") },
+                            onLoginClick = { nav.navigate("login") }
+                        )
                     }
                     composable("interests") {
                         InterestScreen(repo = repo, onDone = { nav.navigate("home") { popUpTo("interests") { inclusive = true } } })

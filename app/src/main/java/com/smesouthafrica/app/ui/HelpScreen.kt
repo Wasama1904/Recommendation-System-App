@@ -7,12 +7,9 @@ import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.navigation.NavController
-
-private val SME_Green = Color(0xFF1E8E3E)
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -25,11 +22,7 @@ fun HelpScreen(nav: NavController) {
                     IconButton(onClick = { nav.popBackStack() }) {
                         Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Back")
                     }
-                },
-                colors = TopAppBarDefaults.topAppBarColors(
-                    containerColor = Color.White,
-                    titleContentColor = SME_Green
-                )
+                }
             )
         }
     ) { pad ->
@@ -40,17 +33,19 @@ fun HelpScreen(nav: NavController) {
             verticalArrangement = Arrangement.spacedBy(16.dp)
         ) {
             item {
-                Card(colors = CardDefaults.cardColors(containerColor = Color(0xFFD4F0DA))) {
+                Card(colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.primaryContainer)) {
                     Column(Modifier.padding(16.dp)) {
                         Text(
                             "SME South Africa App - Help System",
                             style = MaterialTheme.typography.titleMedium,
-                            fontWeight = FontWeight.Bold
+                            fontWeight = FontWeight.Bold,
+                            color = MaterialTheme.colorScheme.onPrimaryContainer
                         )
                         Spacer(Modifier.height(8.dp))
                         Text(
                             "This app learns what you are interested in and recommends relevant business content.",
-                            style = MaterialTheme.typography.bodySmall
+                            style = MaterialTheme.typography.bodySmall,
+                            color = MaterialTheme.colorScheme.onPrimaryContainer
                         )
                     }
                 }
@@ -80,13 +75,14 @@ fun HelpScreen(nav: NavController) {
                 )
             }
             item {
-                Card {
+                Card(colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant)) {
                     Column(Modifier.padding(16.dp)) {
-                        Text("Contact & Support", fontWeight = FontWeight.Bold)
+                        Text("Contact & Support", fontWeight = FontWeight.Bold, color = MaterialTheme.colorScheme.onSurfaceVariant)
                         Spacer(Modifier.height(8.dp))
                         Text(
                             "For XISD6329 Task 2\nTeam: Wasama, Cameron, TinoTenda\nGitHub: Recommendation-System-App\nAzure: Same name\nFirebase: SME-Recommendation-System-App",
-                            style = MaterialTheme.typography.bodySmall
+                            style = MaterialTheme.typography.bodySmall,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant
                         )
                     }
                 }
@@ -97,11 +93,11 @@ fun HelpScreen(nav: NavController) {
 
 @Composable
 fun HelpSection(title: String, content: String) {
-    Card {
+    Card(colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface)) {
         Column(Modifier.padding(16.dp)) {
-            Text(title, fontWeight = FontWeight.Bold, style = MaterialTheme.typography.titleSmall)
+            Text(title, fontWeight = FontWeight.Bold, style = MaterialTheme.typography.titleSmall, color = MaterialTheme.colorScheme.onSurface)
             Spacer(Modifier.height(8.dp))
-            Text(content, style = MaterialTheme.typography.bodySmall)
+            Text(content, style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
         }
     }
 }

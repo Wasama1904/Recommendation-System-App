@@ -10,7 +10,15 @@ package com.smesouthafrica.app.data
  * - BehaviourLog -> 'behaviourLogs' collection (implicit interaction tracking)
  * - SearchLog -> 'searchLogs' collection (user query tracking)
  * - SavedArticle -> 'savedArticles' collection (bookmarks)
+ * - AppUser -> Currently logged-in user profile
  */
+
+data class AppUser(
+    val userId: String = "",
+    val name: String = "",
+    val email: String = "",
+    val role: String = "Entrepreneur"
+)
 
 data class Article(
     val articleId: Int = 0,

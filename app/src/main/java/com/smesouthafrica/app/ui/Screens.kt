@@ -27,20 +27,27 @@ import kotlinx.coroutines.launch
 // Primary SME South Africa Brand Color
 private val SME_Green = Color(0xFF1E8E3E)
 
+// GLOBAL APP SETTINGS STATE FOR THEME & PREFERENCES
+object AppSettings {
+    var isDarkTheme = mutableStateOf(false)
+    var notificationsEnabled = mutableStateOf(true)
+    var newsletterEnabled = mutableStateOf(true)
+}
+
 /**
  * Animated Splash Screen displaying app branding and logo.
  * Delays briefly using [LaunchedEffect] before triggering callback navigation.
  */
 @Composable fun SplashScreen(onFinish: () -> Unit) {
-    LaunchedEffect(Unit) { delay(1800); onFinish() }
-    Box(Modifier.fillMaxSize().background(Color.White), contentAlignment = Alignment.Center) {
+    LaunchedEffect(Unit) { delay(1200); onFinish() }
+    Box(Modifier.fillMaxSize().background(MaterialTheme.colorScheme.background), contentAlignment = Alignment.Center) {
         Column(horizontalAlignment = Alignment.CenterHorizontally) {
             Box(Modifier.size(80.dp).clip(RoundedCornerShape(20.dp)).background(SME_Green), contentAlignment = Alignment.Center) {
                 Text("SME", color = Color.White, style = MaterialTheme.typography.headlineMedium, fontWeight = FontWeight.Bold)
             }
             Spacer(Modifier.height(16.dp))
             Text("SME SOUTH AFRICA", style = MaterialTheme.typography.titleLarge, fontWeight = FontWeight.Bold)
-            Text("Business made easier.", style = MaterialTheme.typography.bodyMedium, color = Color.Gray)
+            Text("Business made easier.", style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
             Spacer(Modifier.height(32.dp)); CircularProgressIndicator(color = SME_Green)
         }
     }
@@ -57,12 +64,12 @@ private val SME_Green = Color(0xFF1E8E3E)
     val scope = rememberCoroutineScope()
     Column(Modifier.fillMaxSize().padding(24.dp).verticalScroll(rememberScrollState()), verticalArrangement = Arrangement.Center) {
         Text("Welcome Back", style = MaterialTheme.typography.headlineMedium, fontWeight = FontWeight.Bold)
-        Text("Sign in to your personalised business feed", style = MaterialTheme.typography.bodyMedium, color = Color.Gray)
+        Text("Sign in to your personalised business feed", style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
         Spacer(Modifier.height(24.dp))
         OutlinedTextField(value = email, onValueChange = { email = it }, label = { Text("Email") }, leadingIcon = { Icon(Icons.Default.Email, null) }, modifier = Modifier.fillMaxWidth(), isError = error.isNotEmpty())
         Spacer(Modifier.height(12.dp))
         OutlinedTextField(value = pass, onValueChange = { pass = it }, label = { Text("Password") }, leadingIcon = { Icon(Icons.Default.Lock, null) }, visualTransformation = PasswordVisualTransformation(), modifier = Modifier.fillMaxWidth())
-        if (error.isNotEmpty()) { Text(error, color = Color.Red, style = MaterialTheme.typography.bodySmall) }
+        if (error.isNotEmpty()) { Spacer(Modifier.height(8.dp)); Text(error, color = MaterialTheme.colorScheme.error, style = MaterialTheme.typography.bodySmall) }
         Spacer(Modifier.height(20.dp))
         Button(onClick = {
             if (email.isBlank() || !email.contains("@")) { error = "Enter valid email"; return@Button }
@@ -81,11 +88,10 @@ private val SME_Green = Color(0xFF1E8E3E)
         }, modifier = Modifier.fillMaxWidth().height(50.dp), colors = ButtonDefaults.buttonColors(containerColor = SME_Green)) {
             if (loading) CircularProgressIndicator(color = Color.White, modifier = Modifier.size(20.dp)) else Text("Login", fontWeight = FontWeight.Bold)
         }
-        Spacer(Modifier.height(12.dp))
-        TextButton(onClick = onRegister, modifier = Modifier.fillMaxWidth()) { Text("Don't have an account? Create Account", color = SME_Green) }
         Spacer(Modifier.height(16.dp))
-        Card(Modifier.fillMaxWidth(), colors = CardDefaults.cardColors(containerColor = Color(0xFFF6F9F6))) {
-            Column(Modifier.padding(12.dp)) { Text("Demo Login:", style = MaterialTheme.typography.labelSmall); Text("wasama@email.com / 123456", style = MaterialTheme.typography.bodySmall) }
+        Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.Center) {
+            Text("Don't have an account? ", style = MaterialTheme.typography.bodyMedium)
+            Text("Create Account", style = MaterialTheme.typography.bodyMedium, color = SME_Green, fontWeight = FontWeight.Bold, modifier = Modifier.clickable { onRegister() })
         }
     }
 }
@@ -94,7 +100,7 @@ private val SME_Green = Color(0xFF1E8E3E)
  * User Registration Screen with real-time password strength progress indicator
  * and password match verification.
  */
-@Composable fun RegisterScreen(repo: FirebaseRepo, onDone: () -> Unit) {
+@Composable fun RegisterScreen(repo: FirebaseRepo, onDone: () -> Unit, onLoginClick: () -> Unit) {
     var name by remember { mutableStateOf("") }
     var email by remember { mutableStateOf("") }
     var pass by remember { mutableStateOf("") }
@@ -103,7 +109,6 @@ private val SME_Green = Color(0xFF1E8E3E)
     var loading by remember { mutableStateOf(false) }
     val scope = rememberCoroutineScope()
 
-    // Your requested strength logic - allows single type but rewards mixing
     fun calculateStrength(pw: String): Pair<Int, String> {
         if (pw.isEmpty()) return 0 to ""
         if (pw.length < 6) return 1 to "Too short - min 6 chars"
@@ -116,7 +121,7 @@ private val SME_Green = Color(0xFF1E8E3E)
         if (hasLetter) cats++
         if (hasDigit) cats++
         if (hasSpecial) cats++
-        if (hasLower && hasUpper) cats++ // bonus
+        if (hasLower && hasUpper) cats++
 
         var score = cats
         if (pw.length >= 8) score++
@@ -132,7 +137,7 @@ private val SME_Green = Color(0xFF1E8E3E)
 
     Column(Modifier.fillMaxSize().padding(24.dp).verticalScroll(rememberScrollState()), verticalArrangement = Arrangement.Center) {
         Text("Create Account", style = MaterialTheme.typography.headlineMedium, fontWeight = FontWeight.Bold)
-        Text("Join 100,000+ entrepreneurs", style = MaterialTheme.typography.bodyMedium, color = Color.Gray)
+        Text("Join 100,000+ entrepreneurs", style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
         Spacer(Modifier.height(20.dp))
 
         OutlinedTextField(value = name, onValueChange = { name = it }, label = { Text("Full Name") }, leadingIcon = { Icon(Icons.Default.Person, null) }, modifier = Modifier.fillMaxWidth())
@@ -142,7 +147,6 @@ private val SME_Green = Color(0xFF1E8E3E)
         
         OutlinedTextField(value = pass, onValueChange = { pass = it }, label = { Text("Password") }, leadingIcon = { Icon(Icons.Default.Lock, null) }, visualTransformation = PasswordVisualTransformation(), modifier = Modifier.fillMaxWidth())
         
-        // NEW STRENGTH INDICATOR
         if (pass.isNotEmpty()) {
             val (level, label) = calculateStrength(pass)
             val color = when(level){1->Color(0xFFD32F2F); 2->Color(0xFFFF9800); 3->Color(0xFF1976D2); else->Color(0xFF1E8E3E)}
@@ -157,7 +161,7 @@ private val SME_Green = Color(0xFF1E8E3E)
         Spacer(Modifier.height(12.dp))
         OutlinedTextField(value = confirm, onValueChange = { confirm = it }, label = { Text("Confirm Password") }, leadingIcon = { Icon(Icons.Default.Lock, null) }, visualTransformation = PasswordVisualTransformation(), modifier = Modifier.fillMaxWidth(), isError = confirm.isNotEmpty() && confirm != pass)
         
-        if (error.isNotEmpty()) Text(error, color = Color.Red, style = MaterialTheme.typography.bodySmall)
+        if (error.isNotEmpty()) { Spacer(Modifier.height(8.dp)); Text(error, color = MaterialTheme.colorScheme.error, style = MaterialTheme.typography.bodySmall) }
         Spacer(Modifier.height(20.dp))
         
         Button(onClick = {
@@ -171,13 +175,17 @@ private val SME_Green = Color(0xFF1E8E3E)
                     repo.register(email, pass, name)
                     onDone() 
                 } catch (_: Exception) {
-                    // Fallback to offline/demo registration if Firebase Auth throws configuration or connection errors
                     onDone()
                 }
                 loading = false
             }
         }, modifier = Modifier.fillMaxWidth().height(50.dp), colors = ButtonDefaults.buttonColors(containerColor = SME_Green)) {
             if (loading) CircularProgressIndicator(color = Color.White, modifier = Modifier.size(20.dp)) else Text("Create Account", fontWeight = FontWeight.Bold)
+        }
+        Spacer(Modifier.height(16.dp))
+        Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.Center) {
+            Text("Already have an account? ", style = MaterialTheme.typography.bodyMedium)
+            Text("Login", style = MaterialTheme.typography.bodyMedium, color = SME_Green, fontWeight = FontWeight.Bold, modifier = Modifier.clickable { onLoginClick() })
         }
     }
 }
@@ -191,12 +199,16 @@ private val SME_Green = Color(0xFF1E8E3E)
     val scope = rememberCoroutineScope(); var loading by remember { mutableStateOf(false) }
     Column(Modifier.fillMaxSize().padding(24.dp)) {
         Text("What are you interested in?", style = MaterialTheme.typography.headlineSmall, fontWeight = FontWeight.Bold)
-        Text("Select all that apply. This trains your personalised feed (Preferences table).", style = MaterialTheme.typography.bodySmall, color = Color.Gray)
+        Text("Select all that apply. This trains your personalised feed (Preferences table).", style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
         Spacer(Modifier.height(20.dp))
         LazyColumn(modifier = Modifier.weight(1f)) {
             items(SampleData.categories) { cat ->
                 val isSelected = cat in selected
-                Card(Modifier.fillMaxWidth().padding(vertical = 6.dp).clickable { if (isSelected) selected.remove(cat) else selected.add(cat) }, colors = CardDefaults.cardColors(containerColor = if (isSelected) Color(0xFFD4F0DA) else Color(0xFFF5F5F5)), border = if (isSelected) BorderStroke(2.dp, SME_Green) else null) {
+                Card(
+                    Modifier.fillMaxWidth().padding(vertical = 6.dp).clickable { if (isSelected) selected.remove(cat) else selected.add(cat) },
+                    colors = CardDefaults.cardColors(containerColor = if (isSelected) MaterialTheme.colorScheme.primaryContainer else MaterialTheme.colorScheme.surfaceVariant),
+                    border = if (isSelected) BorderStroke(2.dp, SME_Green) else null
+                ) {
                     Row(Modifier.padding(16.dp), verticalAlignment = Alignment.CenterVertically) {
                         Text(cat.icon, style = MaterialTheme.typography.titleLarge); Spacer(Modifier.width(12.dp))
                         Column(Modifier.weight(1f)) { Text(cat.name, fontWeight = FontWeight.Medium) }
@@ -230,10 +242,10 @@ private val SME_Green = Color(0xFF1E8E3E)
     var articles by remember { mutableStateOf<List<ScoredArticle>>(emptyList()) }
     var isLoading by remember { mutableStateOf(true) }
     var userPrefs by remember { mutableStateOf<List<Preference>>(emptyList()) }
+    var user by remember { mutableStateOf(AppUser()) }
     val scope = rememberCoroutineScope()
     val userId = repo.getCurrentUserId()
     
-    // Loads articles and recalculates scoring upon refresh or screen entry
     fun load() {
         scope.launch {
             isLoading = true
@@ -243,6 +255,7 @@ private val SME_Green = Color(0xFF1E8E3E)
             val searches = repo.getSearchLogs(userId)
             val savedIds = repo.getSavedIds(userId)
             userPrefs = prefs
+            user = repo.getCurrentUser()
             articles = RecommendationEngine.scoreArticles(all, prefs, logs, searches, savedIds)
             isLoading = false
         }
@@ -267,10 +280,10 @@ private val SME_Green = Color(0xFF1E8E3E)
         } else {
             LazyColumn(Modifier.padding(pad).padding(16.dp)) {
                 item {
-                    Card(Modifier.fillMaxWidth(), colors = CardDefaults.cardColors(containerColor = Color(0xFFF6F9F6))) {
+                    Card(Modifier.fillMaxWidth(), colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.primaryContainer)) {
                         Column(Modifier.padding(16.dp)) {
-                            Text("Good morning, Wasama 👋", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold)
-                            Text("Based on your interests: ${if (userPrefs.isEmpty()) "All" else userPrefs.joinToString { it.categoryName }}", style = MaterialTheme.typography.bodySmall, color = Color.Gray)
+                            Text("Good morning, ${user.name} 👋", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold, color = MaterialTheme.colorScheme.onPrimaryContainer)
+                            Text("Based on your interests: ${if (userPrefs.isEmpty()) "All" else userPrefs.joinToString { it.categoryName }}", style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onPrimaryContainer.copy(alpha = 0.8f))
                         }
                     }
                     Spacer(Modifier.height(16.dp))
@@ -278,28 +291,33 @@ private val SME_Green = Color(0xFF1E8E3E)
                     Spacer(Modifier.height(20.dp))
                     Row(verticalAlignment = Alignment.CenterVertically) {
                         Text("Recommended for You", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold); Spacer(Modifier.width(8.dp))
-                        Badge(containerColor = SME_Green) { Text("${articles.size} articles") }
+                        Badge(containerColor = SME_Green) { Text("${articles.size} articles", color = Color.White) }
                     }
-                    Text("Sorted by recommendation score - proves engine works", style = MaterialTheme.typography.bodySmall, color = Color.Gray)
+                    Text("Sorted by recommendation score - proves engine works", style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
                     Spacer(Modifier.height(12.dp))
                 }
                 items(articles) { scored ->
-                    Card(Modifier.fillMaxWidth().padding(vertical = 8.dp).clickable { nav.navigate("article/${scored.article.articleId}") }, colors = CardDefaults.cardColors(containerColor = Color.White), elevation = CardDefaults.cardElevation(2.dp), shape = RoundedCornerShape(12.dp)) {
+                    Card(
+                        Modifier.fillMaxWidth().padding(vertical = 8.dp).clickable { nav.navigate("article/${scored.article.articleId}") },
+                        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
+                        elevation = CardDefaults.cardElevation(2.dp),
+                        shape = RoundedCornerShape(12.dp)
+                    ) {
                         Column(Modifier.padding(16.dp)) {
                             Row(verticalAlignment = Alignment.CenterVertically) {
                                 AssistChip(onClick = {}, label = { Text(scored.article.categoryName) }, leadingIcon = { Text(scored.article.imageEmoji) })
                                 Spacer(Modifier.weight(1f))
-                                Badge(containerColor = if (scored.score >= 10) SME_Green else Color.LightGray) { Text("Score: ${scored.score}", color = if (scored.score >= 10) Color.White else Color.Black) }
+                                Badge(containerColor = if (scored.score >= 10) SME_Green else MaterialTheme.colorScheme.surfaceVariant) { Text("Score: ${scored.score}", color = if (scored.score >= 10) Color.White else MaterialTheme.colorScheme.onSurfaceVariant) }
                             }
                             Spacer(Modifier.height(8.dp))
-                            Text(scored.article.title, style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.SemiBold)
+                            Text(scored.article.title, style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.SemiBold, color = MaterialTheme.colorScheme.onSurface)
                             Spacer(Modifier.height(4.dp))
-                            Text(scored.article.description, style = MaterialTheme.typography.bodySmall, color = Color.Gray, maxLines = 2)
+                            Text(scored.article.description, style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant, maxLines = 2)
                             Spacer(Modifier.height(8.dp))
                             Row(verticalAlignment = Alignment.CenterVertically) {
-                                Icon(Icons.Default.Schedule, null, modifier = Modifier.size(14.dp), tint = Color.Gray)
-                                Spacer(Modifier.width(4.dp)); Text(scored.article.readTime, style = MaterialTheme.typography.labelSmall, color = Color.Gray)
-                                Spacer(Modifier.width(12.dp)); Text("• ${scored.article.author}", style = MaterialTheme.typography.labelSmall, color = Color.Gray)
+                                Icon(Icons.Default.Schedule, null, modifier = Modifier.size(14.dp), tint = MaterialTheme.colorScheme.onSurfaceVariant)
+                                Spacer(Modifier.width(4.dp)); Text(scored.article.readTime, style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                                Spacer(Modifier.width(12.dp)); Text("• ${scored.article.author}", style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
                             }
                         }
                     }
@@ -310,13 +328,13 @@ private val SME_Green = Color(0xFF1E8E3E)
                     Spacer(Modifier.height(12.dp))
                     LazyRow(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
                         items(SampleData.articles.take(3)) { art ->
-                            Card(Modifier.width(200.dp), colors = CardDefaults.cardColors(containerColor = Color(0xFF1A1A1A))) {
+                            Card(Modifier.width(200.dp), colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant)) {
                                 Column(Modifier.padding(16.dp)) {
                                     Text(art.imageEmoji, style = MaterialTheme.typography.headlineSmall)
                                     Spacer(Modifier.height(8.dp))
-                                    Text(art.title, color = Color.White, style = MaterialTheme.typography.bodyMedium, fontWeight = FontWeight.Bold, maxLines = 3)
+                                    Text(art.title, style = MaterialTheme.typography.bodyMedium, fontWeight = FontWeight.Bold, maxLines = 3)
                                     Spacer(Modifier.height(8.dp))
-                                    Text("Popular now", color = Color.Gray, style = MaterialTheme.typography.labelSmall)
+                                    Text("Popular now", color = MaterialTheme.colorScheme.onSurfaceVariant, style = MaterialTheme.typography.labelSmall)
                                 }
                             }
                         }
@@ -339,38 +357,37 @@ private val SME_Green = Color(0xFF1E8E3E)
     val scope = rememberCoroutineScope()
     val userId = repo.getCurrentUserId()
     
-    // Log reading event with duration on screen view
     LaunchedEffect(articleId) {
         article = repo.getArticles().find { it.articleId == articleId }
         isSaved = articleId in repo.getSavedIds(userId)
         scope.launch { repo.logBehaviour(userId, articleId, "READ", 85) }
     }
     
-    Scaffold(bottomBar = { BottomBar(nav, "home") }, topBar = { TopAppBar(title = { Text("Article") }, navigationIcon = { IconButton(onClick = { nav.popBackStack() }) { Icon(Icons.Default.ArrowBack, null) } }) }) { pad ->
+    Scaffold(bottomBar = { BottomBar(nav, "home") }, topBar = { TopAppBar(title = { Text("Article") }, navigationIcon = { IconButton(onClick = { nav.popBackStack() }) { Icon(Icons.Default.ArrowBack, null) } }, actions = { IconButton(onClick = { nav.navigate("help") }) { Icon(Icons.AutoMirrored.Filled.HelpOutline, "Help") } }) }) { pad ->
         article?.let { a ->
             LazyColumn(Modifier.padding(pad).padding(20.dp)) {
                 item {
-                    AssistChip(onClick = {}, label = { Text(a.categoryName) }, leadingIcon = { Text(a.imageEmoji) }, colors = AssistChipDefaults.assistChipColors(containerColor = Color(0xFFD4F0DA)))
+                    AssistChip(onClick = {}, label = { Text(a.categoryName) }, leadingIcon = { Text(a.imageEmoji) })
                     Spacer(Modifier.height(12.dp))
                     Text(a.title, style = MaterialTheme.typography.headlineSmall, fontWeight = FontWeight.Bold)
                     Spacer(Modifier.height(8.dp))
                     Row(verticalAlignment = Alignment.CenterVertically) {
                         Text(a.author, style = MaterialTheme.typography.bodySmall, fontWeight = FontWeight.Bold)
-                        Spacer(Modifier.width(8.dp)); Text("• ${a.readTime}", style = MaterialTheme.typography.bodySmall, color = Color.Gray)
+                        Spacer(Modifier.width(8.dp)); Text("• ${a.readTime}", style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
                     }
                     Spacer(Modifier.height(20.dp))
-                    Box(Modifier.fillMaxWidth().height(160.dp).clip(RoundedCornerShape(12.dp)).background(Color(0xFFF5F5F5)), contentAlignment = Alignment.Center) {
+                    Box(Modifier.fillMaxWidth().height(160.dp).clip(RoundedCornerShape(12.dp)).background(MaterialTheme.colorScheme.surfaceVariant), contentAlignment = Alignment.Center) {
                         Text(a.imageEmoji, style = MaterialTheme.typography.displayLarge)
                     }
                     Spacer(Modifier.height(20.dp))
                     Text(a.content, style = MaterialTheme.typography.bodyMedium, lineHeight = MaterialTheme.typography.bodyMedium.lineHeight * 1.4)
                     Spacer(Modifier.height(24.dp))
-                    Card(Modifier.fillMaxWidth(), colors = CardDefaults.cardColors(containerColor = Color(0xFFF6F9F6))) {
+                    Card(Modifier.fillMaxWidth(), colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant)) {
                         Column(Modifier.padding(16.dp), horizontalAlignment = Alignment.CenterHorizontally) {
                             Text("Was this article useful?", style = MaterialTheme.typography.titleSmall)
                             Spacer(Modifier.height(12.dp))
                             Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
-                                FilledTonalButton(onClick = { scope.launch { repo.logBehaviour(userId, a.articleId, "LIKE"); isLiked = true } }, colors = ButtonDefaults.filledTonalButtonColors(containerColor = if (isLiked) SME_Green else Color.White)) {
+                                FilledTonalButton(onClick = { scope.launch { repo.logBehaviour(userId, a.articleId, "LIKE"); isLiked = true } }, colors = ButtonDefaults.filledTonalButtonColors(containerColor = if (isLiked) SME_Green else MaterialTheme.colorScheme.surface)) {
                                     Text(if (isLiked) "👍 Liked" else "👍 Yes")
                                 }
                                 OutlinedButton(onClick = { scope.launch { repo.logBehaviour(userId, a.articleId, "DISLIKE") } }) { Text("👎 No") }
@@ -381,7 +398,7 @@ private val SME_Green = Color(0xFF1E8E3E)
                     Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
                         Button(onClick = {
                             scope.launch { val nowSaved = repo.toggleSave(userId, a.articleId); isSaved = nowSaved }
-                        }, modifier = Modifier.weight(1f), colors = ButtonDefaults.buttonColors(containerColor = if (isSaved) SME_Green else Color.Black)) {
+                        }, modifier = Modifier.weight(1f), colors = ButtonDefaults.buttonColors(containerColor = if (isSaved) SME_Green else MaterialTheme.colorScheme.onSurface)) {
                             Icon(if (isSaved) Icons.Default.Bookmark else Icons.Default.BookmarkBorder, null); Spacer(Modifier.width(8.dp)); Text(if (isSaved) "Saved" else "Save Article")
                         }
                         OutlinedButton(onClick = { /* Share intent */ }, modifier = Modifier.weight(1f)) {
@@ -393,10 +410,10 @@ private val SME_Green = Color(0xFF1E8E3E)
                     Spacer(Modifier.height(8.dp))
                 }
                 items(SampleData.articles.filter { it.categoryName == a.categoryName && it.articleId != a.articleId }.take(3)) { related ->
-                    Card(Modifier.fillMaxWidth().padding(vertical = 6.dp).clickable { nav.navigate("article/${related.articleId}") }, colors = CardDefaults.cardColors(containerColor = Color.White), elevation = CardDefaults.cardElevation(1.dp)) {
+                    Card(Modifier.fillMaxWidth().padding(vertical = 6.dp).clickable { nav.navigate("article/${related.articleId}") }, colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface), elevation = CardDefaults.cardElevation(1.dp)) {
                         Row(Modifier.padding(12.dp), verticalAlignment = Alignment.CenterVertically) {
                             Text(related.imageEmoji); Spacer(Modifier.width(12.dp))
-                            Column { Text(related.title, style = MaterialTheme.typography.bodyMedium, fontWeight = FontWeight.Medium); Text(related.categoryName, style = MaterialTheme.typography.labelSmall, color = Color.Gray) }
+                            Column { Text(related.title, style = MaterialTheme.typography.bodyMedium, fontWeight = FontWeight.Medium, color = MaterialTheme.colorScheme.onSurface); Text(related.categoryName, style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.onSurfaceVariant) }
                         }
                     }
                 }
@@ -420,7 +437,7 @@ private val SME_Green = Color(0xFF1E8E3E)
     
     LaunchedEffect(Unit) { allArticles = repo.getArticles(); results = allArticles; recentSearches = repo.getSearchLogs(userId) }
     
-    Scaffold(bottomBar = { BottomBar(nav, "search") }, topBar = { TopAppBar(title = { Text("Explore") }) }) { pad ->
+    Scaffold(bottomBar = { BottomBar(nav, "search") }, topBar = { TopAppBar(title = { Text("Explore") }, actions = { IconButton(onClick = { nav.navigate("help") }) { Icon(Icons.AutoMirrored.Filled.HelpOutline, "Help") } }) }) { pad ->
         Column(Modifier.padding(pad).padding(16.dp)) {
             OutlinedTextField(value = query, onValueChange = {
                 query = it
@@ -441,16 +458,16 @@ private val SME_Green = Color(0xFF1E8E3E)
             Spacer(Modifier.height(16.dp))
             if (recentSearches.isNotEmpty() && query.isEmpty()) {
                 Text("Recent searches", style = MaterialTheme.typography.titleSmall)
-                recentSearches.take(3).forEach { log -> Text("• ${log.query}", style = MaterialTheme.typography.bodySmall, color = Color.Gray, modifier = Modifier.padding(vertical = 2.dp)) }
+                recentSearches.take(3).forEach { log -> Text("• ${log.query}", style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant, modifier = Modifier.padding(vertical = 2.dp)) }
                 Spacer(Modifier.height(16.dp))
             }
             LazyColumn(modifier = Modifier.weight(1f)) {
                 items(results) { art ->
-                    Card(Modifier.fillMaxWidth().padding(vertical = 6.dp).clickable { nav.navigate("article/${art.articleId}") }, colors = CardDefaults.cardColors(containerColor = Color.White), elevation = CardDefaults.cardElevation(1.dp), shape = RoundedCornerShape(12.dp)) {
+                    Card(Modifier.fillMaxWidth().padding(vertical = 6.dp).clickable { nav.navigate("article/${art.articleId}") }, colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface), elevation = CardDefaults.cardElevation(1.dp), shape = RoundedCornerShape(12.dp)) {
                         Row(Modifier.padding(16.dp), verticalAlignment = Alignment.CenterVertically) {
                             Text(art.imageEmoji, style = MaterialTheme.typography.titleLarge); Spacer(Modifier.width(12.dp))
-                            Column(Modifier.weight(1f)) { Text(art.title, style = MaterialTheme.typography.bodyMedium, fontWeight = FontWeight.Medium); Text("${art.categoryName} • ${art.readTime}", style = MaterialTheme.typography.labelSmall, color = Color.Gray) }
-                            Icon(Icons.Default.ChevronRight, null, tint = Color.Gray)
+                            Column(Modifier.weight(1f)) { Text(art.title, style = MaterialTheme.typography.bodyMedium, fontWeight = FontWeight.Medium, color = MaterialTheme.colorScheme.onSurface); Text("${art.categoryName} • ${art.readTime}", style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.onSurfaceVariant) }
+                            Icon(Icons.Default.ChevronRight, null, tint = MaterialTheme.colorScheme.onSurfaceVariant)
                         }
                     }
                 }
@@ -475,24 +492,24 @@ private val SME_Green = Color(0xFF1E8E3E)
         isLoading = false
     }
     
-    Scaffold(bottomBar = { BottomBar(nav, "saved") }, topBar = { TopAppBar(title = { Text("Saved Articles") }) }) { pad ->
+    Scaffold(bottomBar = { BottomBar(nav, "saved") }, topBar = { TopAppBar(title = { Text("Saved Articles") }, actions = { IconButton(onClick = { nav.navigate("help") }) { Icon(Icons.AutoMirrored.Filled.HelpOutline, "Help") } }) }) { pad ->
         if (isLoading) Box(Modifier.fillMaxSize().padding(pad), contentAlignment = Alignment.Center) { CircularProgressIndicator(color = SME_Green) }
         else if (savedArticles.isEmpty()) {
             Box(Modifier.fillMaxSize().padding(pad).padding(24.dp), contentAlignment = Alignment.Center) {
                 Column(horizontalAlignment = Alignment.CenterHorizontally) {
                     Text("📚", style = MaterialTheme.typography.displayMedium)
                     Spacer(Modifier.height(16.dp)); Text("No saved articles yet", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold)
-                    Text("Tap ♡ Save on any article to add it here. This is your personal library.", style = MaterialTheme.typography.bodySmall, color = Color.Gray)
+                    Text("Tap ♡ Save on any article to add it here. This is your personal library.", style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
                 }
             }
         } else {
             LazyColumn(Modifier.padding(pad).padding(16.dp)) {
-                item { Text("${savedArticles.size} saved articles", style = MaterialTheme.typography.bodySmall, color = Color.Gray); Spacer(Modifier.height(12.dp)) }
+                item { Text("${savedArticles.size} saved articles", style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant); Spacer(Modifier.height(12.dp)) }
                 items(savedArticles) { art ->
-                    Card(Modifier.fillMaxWidth().padding(vertical = 6.dp).clickable { nav.navigate("article/${art.articleId}") }, colors = CardDefaults.cardColors(containerColor = Color.White), elevation = CardDefaults.cardElevation(2.dp), shape = RoundedCornerShape(12.dp)) {
+                    Card(Modifier.fillMaxWidth().padding(vertical = 6.dp).clickable { nav.navigate("article/${art.articleId}") }, colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface), elevation = CardDefaults.cardElevation(2.dp), shape = RoundedCornerShape(12.dp)) {
                         Column(Modifier.padding(16.dp)) {
                             Row { AssistChip(onClick = {}, label = { Text(art.categoryName) }); Spacer(Modifier.weight(1f)); Icon(Icons.Default.Bookmark, null, tint = SME_Green) }
-                            Spacer(Modifier.height(8.dp)); Text(art.title, fontWeight = FontWeight.Medium)
+                            Spacer(Modifier.height(8.dp)); Text(art.title, fontWeight = FontWeight.Medium, color = MaterialTheme.colorScheme.onSurface)
                         }
                     }
                 }
@@ -508,9 +525,14 @@ private val SME_Green = Color(0xFF1E8E3E)
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable fun ProfileScreen(repo: FirebaseRepo, nav: NavController) {
     var prefs by remember { mutableStateOf<List<Preference>>(emptyList()) }
+    var user by remember { mutableStateOf(AppUser(name = "Loading...", email = "...")) }
+    val scope = rememberCoroutineScope()
     val userId = repo.getCurrentUserId()
     
-    LaunchedEffect(Unit) { prefs = repo.getPreferences(userId) }
+    LaunchedEffect(Unit) {
+        prefs = repo.getPreferences(userId)
+        user = repo.getCurrentUser()
+    }
     
     Scaffold(
         bottomBar = { BottomBar(nav, "profile") },
@@ -527,21 +549,27 @@ private val SME_Green = Color(0xFF1E8E3E)
     ) { pad ->
         LazyColumn(Modifier.padding(pad).padding(16.dp)) {
             item {
-                Card(Modifier.fillMaxWidth(), colors = CardDefaults.cardColors(containerColor = Color(0xFFF6F9F6)), shape = RoundedCornerShape(16.dp)) {
+                Card(Modifier.fillMaxWidth(), colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant), shape = RoundedCornerShape(16.dp)) {
                     Row(Modifier.padding(16.dp), verticalAlignment = Alignment.CenterVertically) {
-                        Box(Modifier.size(56.dp).clip(RoundedCornerShape(28.dp)).background(SME_Green), contentAlignment = Alignment.Center) { Text("W", color = Color.White, style = MaterialTheme.typography.titleLarge, fontWeight = FontWeight.Bold) }
+                        Box(Modifier.size(56.dp).clip(RoundedCornerShape(28.dp)).background(SME_Green), contentAlignment = Alignment.Center) {
+                            Text(user.name.take(1).uppercase().ifEmpty { "U" }, color = Color.White, style = MaterialTheme.typography.titleLarge, fontWeight = FontWeight.Bold)
+                        }
                         Spacer(Modifier.width(16.dp))
-                        Column { Text("Wasama Makolo", fontWeight = FontWeight.Bold); Text("wasama@email.com", style = MaterialTheme.typography.bodySmall, color = Color.Gray); Text("Entrepreneur", style = MaterialTheme.typography.labelSmall, color = SME_Green) }
+                        Column {
+                            Text(user.name, fontWeight = FontWeight.Bold)
+                            Text(user.email, style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                            Text(user.role, style = MaterialTheme.typography.labelSmall, color = SME_Green)
+                        }
                     }
                 }
                 Spacer(Modifier.height(24.dp))
                 Text("My Interests", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold)
-                Text("These power your recommendation engine (Preferences table)", style = MaterialTheme.typography.bodySmall, color = Color.Gray)
+                Text("These power your recommendation engine (Preferences table)", style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
                 Spacer(Modifier.height(12.dp))
             }
-            items(prefs) { pref -> Card(Modifier.fillMaxWidth().padding(vertical = 4.dp), colors = CardDefaults.cardColors(containerColor = Color.White)) { Row(Modifier.padding(12.dp), verticalAlignment = Alignment.CenterVertically) { Text(SampleData.categories.find { it.name == pref.categoryName }?.icon ?: "✓"); Spacer(Modifier.width(12.dp)); Text(pref.categoryName, fontWeight = FontWeight.Medium); Spacer(Modifier.weight(1f)); Badge(containerColor = Color(0xFFD4F0DA)) { Text("Weight ${pref.weight}") } } } }
+            items(prefs) { pref -> Card(Modifier.fillMaxWidth().padding(vertical = 4.dp), colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface)) { Row(Modifier.padding(12.dp), verticalAlignment = Alignment.CenterVertically) { Text(SampleData.categories.find { it.name == pref.categoryName }?.icon ?: "✓"); Spacer(Modifier.width(12.dp)); Text(pref.categoryName, fontWeight = FontWeight.Medium, color = MaterialTheme.colorScheme.onSurface); Spacer(Modifier.weight(1f)); Badge { Text("Weight ${pref.weight}") } } } }
             item {
-                if (prefs.isEmpty()) { Text("No interests selected yet - tap Edit Interests", style = MaterialTheme.typography.bodySmall, color = Color.Gray) }
+                if (prefs.isEmpty()) { Text("No interests selected yet - tap Edit Interests", style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant) }
                 Spacer(Modifier.height(16.dp))
                 Button(onClick = { nav.navigate("interests") }, modifier = Modifier.fillMaxWidth(), colors = ButtonDefaults.buttonColors(containerColor = SME_Green)) { Icon(Icons.Default.Edit, null); Spacer(Modifier.width(8.dp)); Text("Edit Interests") }
                 Spacer(Modifier.height(24.dp))
@@ -549,9 +577,23 @@ private val SME_Green = Color(0xFF1E8E3E)
                 Spacer(Modifier.height(8.dp))
                 Card(Modifier.fillMaxWidth()) {
                     Column {
-                        ListItem(headlineContent = { Text("Notifications") }, leadingContent = { Icon(Icons.Default.Notifications, null) }, trailingContent = { Switch(checked = true, onCheckedChange = {}) })
+                        ListItem(
+                            headlineContent = { Text("Dark Theme") },
+                            leadingContent = { Icon(Icons.Default.DarkMode, null) },
+                            trailingContent = { Switch(checked = AppSettings.isDarkTheme.value, onCheckedChange = { AppSettings.isDarkTheme.value = it }) }
+                        )
                         HorizontalDivider()
-                        ListItem(headlineContent = { Text("Newsletter") }, leadingContent = { Icon(Icons.Default.Email, null) }, trailingContent = { Switch(checked = true, onCheckedChange = {}) })
+                        ListItem(
+                            headlineContent = { Text("Notifications") },
+                            leadingContent = { Icon(Icons.Default.Notifications, null) },
+                            trailingContent = { Switch(checked = AppSettings.notificationsEnabled.value, onCheckedChange = { AppSettings.notificationsEnabled.value = it }) }
+                        )
+                        HorizontalDivider()
+                        ListItem(
+                            headlineContent = { Text("Newsletter") },
+                            leadingContent = { Icon(Icons.Default.Email, null) },
+                            trailingContent = { Switch(checked = AppSettings.newsletterEnabled.value, onCheckedChange = { AppSettings.newsletterEnabled.value = it }) }
+                        )
                         HorizontalDivider()
                         ListItem(
                             headlineContent = { Text("Help & Support") },
@@ -562,17 +604,26 @@ private val SME_Green = Color(0xFF1E8E3E)
                     }
                 }
                 Spacer(Modifier.height(16.dp))
-                Card(Modifier.fillMaxWidth(), colors = CardDefaults.cardColors(containerColor = Color(0xFFFFF3E0))) {
+                Card(Modifier.fillMaxWidth(), colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant)) {
                     Column(Modifier.padding(16.dp)) {
                         Text("How recommendations work", style = MaterialTheme.typography.titleSmall, fontWeight = FontWeight.Bold)
                         Spacer(Modifier.height(8.dp))
                         Text("Score = Interest(+5) + Search(+4) + Read(+3) + Long Read(+4) + Same Category(+2) + Saved(+5) + Liked(+5)", style = MaterialTheme.typography.bodySmall)
                         Spacer(Modifier.height(8.dp))
-                        Text("Your feed re-orders automatically when you search, read, save or like articles. This is stored in Firestore: behaviourLogs + searchLogs.", style = MaterialTheme.typography.bodySmall, color = Color.Gray)
+                        Text("Your feed re-orders automatically when you search, read, save or like articles. This is stored in Firestore: behaviourLogs + searchLogs.", style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
                     }
                 }
                 Spacer(Modifier.height(24.dp))
-                OutlinedButton(onClick = { nav.navigate("login") { popUpTo("home") { inclusive = true } } }, modifier = Modifier.fillMaxWidth(), colors = ButtonDefaults.outlinedButtonColors(contentColor = Color.Red)) {
+                OutlinedButton(
+                    onClick = {
+                        scope.launch {
+                            repo.logout()
+                            nav.navigate("login") { popUpTo("home") { inclusive = true } }
+                        }
+                    },
+                    modifier = Modifier.fillMaxWidth(),
+                    colors = ButtonDefaults.outlinedButtonColors(contentColor = MaterialTheme.colorScheme.error)
+                ) {
                     Icon(Icons.Default.Logout, null); Spacer(Modifier.width(8.dp)); Text("Logout")
                 }
                 Spacer(Modifier.height(32.dp))
@@ -585,10 +636,10 @@ private val SME_Green = Color(0xFF1E8E3E)
  * Reusable Navigation Bar component displaying standard bottom navigation destinations.
  */
 @Composable fun BottomBar(nav: NavController, current: String) {
-    NavigationBar(containerColor = Color.White) {
-        NavigationBarItem(icon = { Icon(Icons.Default.Home, null) }, label = { Text("Home") }, selected = current == "home", onClick = { nav.navigate("home") }, colors = NavigationBarItemDefaults.colors(selectedIconColor = SME_Green, selectedTextColor = SME_Green, indicatorColor = Color(0xFFD4F0DA)))
-        NavigationBarItem(icon = { Icon(Icons.Default.Search, null) }, label = { Text("Explore") }, selected = current == "search", onClick = { nav.navigate("search") }, colors = NavigationBarItemDefaults.colors(selectedIconColor = SME_Green, selectedTextColor = SME_Green, indicatorColor = Color(0xFFD4F0DA)))
-        NavigationBarItem(icon = { Icon(Icons.Default.BookmarkBorder, null) }, label = { Text("Saved") }, selected = current == "saved", onClick = { nav.navigate("saved") }, colors = NavigationBarItemDefaults.colors(selectedIconColor = SME_Green, selectedTextColor = SME_Green, indicatorColor = Color(0xFFD4F0DA)))
-        NavigationBarItem(icon = { Icon(Icons.Default.Person, null) }, label = { Text("Profile") }, selected = current == "profile", onClick = { nav.navigate("profile") }, colors = NavigationBarItemDefaults.colors(selectedIconColor = SME_Green, selectedTextColor = SME_Green, indicatorColor = Color(0xFFD4F0DA)))
+    NavigationBar {
+        NavigationBarItem(icon = { Icon(Icons.Default.Home, null) }, label = { Text("Home") }, selected = current == "home", onClick = { nav.navigate("home") }, colors = NavigationBarItemDefaults.colors(selectedIconColor = SME_Green, indicatorColor = MaterialTheme.colorScheme.primaryContainer))
+        NavigationBarItem(icon = { Icon(Icons.Default.Search, null) }, label = { Text("Explore") }, selected = current == "search", onClick = { nav.navigate("search") }, colors = NavigationBarItemDefaults.colors(selectedIconColor = SME_Green, indicatorColor = MaterialTheme.colorScheme.primaryContainer))
+        NavigationBarItem(icon = { Icon(Icons.Default.BookmarkBorder, null) }, label = { Text("Saved") }, selected = current == "saved", onClick = { nav.navigate("saved") }, colors = NavigationBarItemDefaults.colors(selectedIconColor = SME_Green, indicatorColor = MaterialTheme.colorScheme.primaryContainer))
+        NavigationBarItem(icon = { Icon(Icons.Default.Person, null) }, label = { Text("Profile") }, selected = current == "profile", onClick = { nav.navigate("profile") }, colors = NavigationBarItemDefaults.colors(selectedIconColor = SME_Green, indicatorColor = MaterialTheme.colorScheme.primaryContainer))
     }
 }

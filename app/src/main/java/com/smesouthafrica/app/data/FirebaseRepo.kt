@@ -1,6 +1,7 @@
 package com.smesouthafrica.app.data
 
 import com.google.firebase.auth.FirebaseAuth
+import com.google.firebase.auth.UserProfileChangeRequest
 import com.google.firebase.firestore.FirebaseFirestore
 import kotlinx.coroutines.tasks.await
 
@@ -19,25 +20,69 @@ class FirebaseRepo {
      * Uses kotlinx.coroutines.tasks.await for non-blocking asynchronous calls.
      */
     suspend fun seedIfEmpty() {
-        val articles = db.collection("articles").get().await()
-        if (articles.isEmpty) {
-            SampleData.categories.forEach { cat ->
-                db.collection("categories").document(cat.categoryId.toString()).set(mapOf("categoryId" to cat.categoryId, "name" to cat.name, "icon" to cat.icon)).await()
+        try {
+            val articles = db.collection("articles").get().await()
+            if (articles.isEmpty) {
+                SampleData.categories.forEach { cat ->
+                    db.collection("categories").document(cat.categoryId.toString()).set(mapOf("categoryId" to cat.categoryId, "name" to cat.name, "icon" to cat.icon)).await()
+                }
+                SampleData.articles.forEach { art ->
+                    db.collection("articles").document(art.articleId.toString()).set(art).await()
+                }
             }
-            SampleData.articles.forEach { art ->
-                db.collection("articles").document(art.articleId.toString()).set(art).await()
-            }
-        }
+        } catch (_: Exception) {}
     }
 
     /** Returns currently authenticated user UID or a fallback demo identifier */
     fun getCurrentUserId(): String = auth.currentUser?.uid ?: "user_123_demo"
+
+    /** Returns currently authenticated AppUser profile, querying Firestore user record for full name */
+    suspend fun getCurrentUser(): AppUser {
+        val firebaseUser = auth.currentUser
+        return if (firebaseUser != null) {
+            try {
+                val doc = db.collection("users").document(firebaseUser.uid).get().await()
+                if (doc.exists()) {
+                    val name = doc.getString("name") ?: firebaseUser.displayName ?: firebaseUser.email?.substringBefore("@")?.replaceFirstChar { it.uppercase() } ?: "User"
+                    val email = doc.getString("email") ?: firebaseUser.email ?: ""
+                    AppUser(userId = firebaseUser.uid, name = name, email = email, role = "Entrepreneur")
+                } else {
+                    AppUser(
+                        userId = firebaseUser.uid,
+                        name = firebaseUser.displayName ?: firebaseUser.email?.substringBefore("@")?.replaceFirstChar { it.uppercase() } ?: "User",
+                        email = firebaseUser.email ?: "",
+                        role = "Entrepreneur"
+                    )
+                }
+            } catch (_: Exception) {
+                AppUser(
+                    userId = firebaseUser.uid,
+                    name = firebaseUser.displayName ?: firebaseUser.email?.substringBefore("@") ?: "User",
+                    email = firebaseUser.email ?: "",
+                    role = "Entrepreneur"
+                )
+            }
+        } else {
+            AppUser(userId = "demo", name = "Wasama Makolo", email = "wasama@email.com", role = "Entrepreneur")
+        }
+    }
+
+    /** Signs out the current user from Firebase Auth */
+    suspend fun logout() {
+        try {
+            auth.signOut()
+        } catch (_: Exception) {}
+    }
     
     /** Registers a new user with Firebase Authentication and creates a user record in Firestore */
     suspend fun register(email: String, pass: String, name: String): String {
         val result = auth.createUserWithEmailAndPassword(email, pass).await()
         val uid = result.user!!.uid
-        db.collection("users").document(uid).set(mapOf("userId" to uid, "name" to name, "email" to email, "createdAt" to System.currentTimeMillis())).await()
+        try {
+            val profileUpdates = UserProfileChangeRequest.Builder().setDisplayName(name).build()
+            result.user!!.updateProfile(profileUpdates).await()
+            db.collection("users").document(uid).set(mapOf("userId" to uid, "name" to name, "email" to email, "createdAt" to System.currentTimeMillis(), "role" to "Entrepreneur")).await()
+        } catch (_: Exception) {}
         return uid
     }
     
@@ -50,51 +95,60 @@ class FirebaseRepo {
     /** Fetches all articles from Firestore, falling back to local SampleData if offline */
     suspend fun getArticles(): List<Article> = try {
         db.collection("articles").orderBy("articleId").get().await().toObjects(Article::class.java)
-    } catch (e: Exception) { SampleData.articles }
+    } catch (_: Exception) { SampleData.articles }
 
     /** Fetches all categories from Firestore */
     suspend fun getCategories(): List<Category> = try {
         db.collection("categories").get().await().toObjects(Category::class.java)
-    } catch (e: Exception) { SampleData.categories }
+    } catch (_: Exception) { SampleData.categories }
     
     /** Retrieves user-selected category preferences */
-    suspend fun getPreferences(userId: String): List<Preference> = 
+    suspend fun getPreferences(userId: String): List<Preference> = try {
         db.collection("preferences").whereEqualTo("userId", userId).get().await().toObjects(Preference::class.java)
+    } catch (_: Exception) { emptyList() }
     
     /** Updates user preferences by replacing existing records and logging a CATEGORY_SELECTED event */
     suspend fun savePreferences(userId: String, categories: List<Category>) {
-        val old = db.collection("preferences").whereEqualTo("userId", userId).get().await()
-        old.forEach { it.reference.delete() }
-        categories.forEach { cat ->
-            db.collection("preferences").add(Preference(userId, cat.categoryId, cat.name, 5))
-        }
-        db.collection("behaviourLogs").add(BehaviourLog(userId, 0, "CATEGORY_SELECTED"))
+        try {
+            val old = db.collection("preferences").whereEqualTo("userId", userId).get().await()
+            old.forEach { it.reference.delete() }
+            categories.forEach { cat ->
+                db.collection("preferences").add(Preference(userId, cat.categoryId, cat.name, 5))
+            }
+            db.collection("behaviourLogs").add(BehaviourLog(userId, 0, "CATEGORY_SELECTED"))
+        } catch (_: Exception) {}
     }
 
     /** Retrieves behavior logs for implicit filtering calculation */
-    suspend fun getBehaviourLogs(userId: String): List<BehaviourLog> = 
+    suspend fun getBehaviourLogs(userId: String): List<BehaviourLog> = try {
         db.collection("behaviourLogs").whereEqualTo("userId", userId).get().await().toObjects(BehaviourLog::class.java)
+    } catch (_: Exception) { emptyList() }
 
     /** Logs implicit user interaction events (READ, LIKE, DISLIKE, SAVE) */
     suspend fun logBehaviour(userId: String, articleId: Int, eventType: String, duration: Int = 0) {
-        db.collection("behaviourLogs").add(BehaviourLog(userId, articleId, eventType, duration))
+        try {
+            db.collection("behaviourLogs").add(BehaviourLog(userId, articleId, eventType, duration))
+        } catch (_: Exception) {}
     }
 
     /** Retrieves past search query logs */
-    suspend fun getSearchLogs(userId: String): List<SearchLog> = 
+    suspend fun getSearchLogs(userId: String): List<SearchLog> = try {
         db.collection("searchLogs").whereEqualTo("userId", userId).get().await().toObjects(SearchLog::class.java)
+    } catch (_: Exception) { emptyList() }
 
     /** Logs user search queries to train future content recommendations */
     suspend fun logSearch(userId: String, query: String) {
-        db.collection("searchLogs").add(SearchLog(userId, query))
-        db.collection("behaviourLogs").add(BehaviourLog(userId, 0, "SEARCH"))
+        try {
+            db.collection("searchLogs").add(SearchLog(userId, query))
+            db.collection("behaviourLogs").add(BehaviourLog(userId, 0, "SEARCH"))
+        } catch (_: Exception) {}
     }
 
     /** Fetches set of article IDs bookmarked by user */
-    suspend fun getSavedIds(userId: String): Set<Int> {
+    suspend fun getSavedIds(userId: String): Set<Int> = try {
         val snap = db.collection("savedArticles").whereEqualTo("userId", userId).get().await()
-        return snap.documents.mapNotNull { it.getLong("articleId")?.toInt() }.toSet()
-    }
+        snap.documents.mapNotNull { it.getLong("articleId")?.toInt() }.toSet()
+    } catch (_: Exception) { emptySet() }
 
     /** Filters articles matching user's saved article IDs */
     suspend fun getSavedArticles(userId: String, allArticles: List<Article>): List<Article> {
@@ -103,9 +157,9 @@ class FirebaseRepo {
     }
 
     /** Toggles saved state of an article and logs a SAVE interaction event */
-    suspend fun toggleSave(userId: String, articleId: Int): Boolean {
+    suspend fun toggleSave(userId: String, articleId: Int): Boolean = try {
         val existing = db.collection("savedArticles").whereEqualTo("userId", userId).whereEqualTo("articleId", articleId).get().await()
-        return if (existing.isEmpty) {
+        if (existing.isEmpty) {
             db.collection("savedArticles").add(SavedArticle(userId, articleId))
             db.collection("behaviourLogs").add(BehaviourLog(userId, articleId, "SAVE"))
             true
@@ -113,5 +167,5 @@ class FirebaseRepo {
             existing.documents.forEach { it.reference.delete() }
             false
         }
-    }
+    } catch (_: Exception) { false }
 }
