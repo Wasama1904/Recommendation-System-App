@@ -170,6 +170,12 @@ This is an open portfolio project. Issues and PRs welcome.
 
 ---
 
+##📄User Guide/Manual
+
+[Uploading SME-User-Manual.pdf…]()
+
+---
+
 ## 📄 License
 
 MIT — Free for educational and commercial use. SME South Africa content remains property of SME South Africa.
