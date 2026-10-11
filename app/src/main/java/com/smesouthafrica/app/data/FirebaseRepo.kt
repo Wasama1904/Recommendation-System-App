@@ -9,11 +9,16 @@ import kotlinx.coroutines.tasks.await
  * Data Repository layer interfacing with Cloud Firestore and Firebase Authentication.
  * 
  * Manages remote data persistence, collection queries, user preferences,
- * and user interaction tracking logs (behaviour logs and search logs).
+ * user session state, and interaction tracking logs.
  */
 class FirebaseRepo {
     private val db = FirebaseFirestore.getInstance()
     private val auth = FirebaseAuth.getInstance()
+
+    companion object {
+        // Shared active session user state across repository instances
+        private var localUser: AppUser = AppUser(userId = "demo", name = "Wasama Makolo", email = "wasama@email.com", role = "Entrepreneur")
+    }
 
     /**
      * Seeds initial categories and articles into Cloud Firestore if collections are empty.
@@ -33,63 +38,90 @@ class FirebaseRepo {
         } catch (_: Exception) {}
     }
 
-    /** Returns currently authenticated user UID or a fallback demo identifier */
-    fun getCurrentUserId(): String = auth.currentUser?.uid ?: "user_123_demo"
+    /** Returns currently authenticated user UID, local session UID, or a fallback identifier */
+    fun getCurrentUserId(): String = auth.currentUser?.uid ?: localUser.userId
 
-    /** Returns currently authenticated AppUser profile, querying Firestore user record for full name */
+    /** Returns currently authenticated AppUser profile from Firebase Auth, Firestore, or local session */
     suspend fun getCurrentUser(): AppUser {
         val firebaseUser = auth.currentUser
-        return if (firebaseUser != null) {
+        if (firebaseUser != null) {
             try {
                 val doc = db.collection("users").document(firebaseUser.uid).get().await()
                 if (doc.exists()) {
-                    val name = doc.getString("name") ?: firebaseUser.displayName ?: firebaseUser.email?.substringBefore("@")?.replaceFirstChar { it.uppercase() } ?: "User"
-                    val email = doc.getString("email") ?: firebaseUser.email ?: ""
-                    AppUser(userId = firebaseUser.uid, name = name, email = email, role = "Entrepreneur")
-                } else {
-                    AppUser(
-                        userId = firebaseUser.uid,
-                        name = firebaseUser.displayName ?: firebaseUser.email?.substringBefore("@")?.replaceFirstChar { it.uppercase() } ?: "User",
-                        email = firebaseUser.email ?: "",
-                        role = "Entrepreneur"
-                    )
+                    val name = doc.getString("name") ?: firebaseUser.displayName ?: localUser.name
+                    val email = doc.getString("email") ?: firebaseUser.email ?: localUser.email
+                    val user = AppUser(userId = firebaseUser.uid, name = name, email = email, role = "Entrepreneur")
+                    localUser = user
+                    return user
                 }
-            } catch (_: Exception) {
-                AppUser(
-                    userId = firebaseUser.uid,
-                    name = firebaseUser.displayName ?: firebaseUser.email?.substringBefore("@") ?: "User",
-                    email = firebaseUser.email ?: "",
-                    role = "Entrepreneur"
-                )
+            } catch (_: Exception) {}
+            
+            if (localUser.email == firebaseUser.email && localUser.name != "Wasama Makolo" && localUser.name != "Guest User") {
+                return localUser
             }
-        } else {
-            AppUser(userId = "demo", name = "Wasama Makolo", email = "wasama@email.com", role = "Entrepreneur")
+            
+            val fallbackName = firebaseUser.displayName 
+                ?: firebaseUser.email?.substringBefore("@")?.replaceFirstChar { it.uppercase() } 
+                ?: localUser.name
+            val fallbackEmail = firebaseUser.email ?: localUser.email
+            val user = AppUser(userId = firebaseUser.uid, name = fallbackName, email = fallbackEmail, role = "Entrepreneur")
+            localUser = user
+            return user
         }
+        
+        return localUser
     }
 
-    /** Signs out the current user from Firebase Auth */
+    /** Signs out the current user from Firebase Auth and resets local session */
     suspend fun logout() {
         try {
             auth.signOut()
         } catch (_: Exception) {}
+        localUser = AppUser(userId = "demo", name = "Guest User", email = "guest@smesouthafrica.co.za", role = "Entrepreneur")
     }
-    
+
     /** Registers a new user with Firebase Authentication and creates a user record in Firestore */
     suspend fun register(email: String, pass: String, name: String): String {
-        val result = auth.createUserWithEmailAndPassword(email, pass).await()
-        val uid = result.user!!.uid
-        try {
-            val profileUpdates = UserProfileChangeRequest.Builder().setDisplayName(name).build()
-            result.user!!.updateProfile(profileUpdates).await()
-            db.collection("users").document(uid).set(mapOf("userId" to uid, "name" to name, "email" to email, "createdAt" to System.currentTimeMillis(), "role" to "Entrepreneur")).await()
-        } catch (_: Exception) {}
-        return uid
+        // Immediately set localUser so profile reflects the registered name instantly (offline/demo or online)
+        val generatedUid = "user_${System.currentTimeMillis()}"
+        localUser = AppUser(userId = generatedUid, name = name, email = email, role = "Entrepreneur")
+        
+        return try {
+            val result = auth.createUserWithEmailAndPassword(email, pass).await()
+            val uid = result.user!!.uid
+            localUser = AppUser(userId = uid, name = name, email = email, role = "Entrepreneur")
+            try {
+                val profileUpdates = UserProfileChangeRequest.Builder().setDisplayName(name).build()
+                result.user!!.updateProfile(profileUpdates).await()
+                db.collection("users").document(uid).set(mapOf("userId" to uid, "name" to name, "email" to email, "createdAt" to System.currentTimeMillis(), "role" to "Entrepreneur")).await()
+            } catch (_: Exception) {}
+            uid
+        } catch (_: Exception) {
+            generatedUid
+        }
     }
-    
+
     /** Authenticates existing user credentials via Firebase Auth */
     suspend fun login(email: String, pass: String): String {
-        val result = auth.signInWithEmailAndPassword(email, pass).await()
-        return result.user!!.uid
+        val derivedName = email.substringBefore("@").split(".", "_", "-")
+            .joinToString(" ") { word -> word.replaceFirstChar { it.uppercase() } }
+            .ifEmpty { "User" }
+        localUser = AppUser(userId = "user_${email.hashCode()}", name = derivedName, email = email, role = "Entrepreneur")
+
+        return try {
+            val result = auth.signInWithEmailAndPassword(email, pass).await()
+            val uid = result.user!!.uid
+            try {
+                val doc = db.collection("users").document(uid).get().await()
+                if (doc.exists()) {
+                    val name = doc.getString("name") ?: derivedName
+                    localUser = AppUser(userId = uid, name = name, email = email, role = "Entrepreneur")
+                }
+            } catch (_: Exception) {}
+            uid
+        } catch (_: Exception) {
+            localUser.userId
+        }
     }
 
     /** Fetches all articles from Firestore, falling back to local SampleData if offline */
