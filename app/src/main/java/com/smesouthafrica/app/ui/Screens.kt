@@ -7,6 +7,7 @@ import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.filled.HelpOutline
 import androidx.compose.material.icons.filled.*
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
@@ -93,33 +94,91 @@ private val SME_Green = Color(0xFF1E8E3E)
  * User Registration Screen with real-time password strength progress indicator
  * and password match verification.
  */
-@OptIn(ExperimentalMaterial3Api::class)
 @Composable fun RegisterScreen(repo: FirebaseRepo, onDone: () -> Unit) {
-    var name by remember { mutableStateOf("") }; var email by remember { mutableStateOf("") }; var pass by remember { mutableStateOf("") }; var confirm by remember { mutableStateOf("") }
-    var error by remember { mutableStateOf("") }; var loading by remember { mutableStateOf(false) }
+    var name by remember { mutableStateOf("") }
+    var email by remember { mutableStateOf("") }
+    var pass by remember { mutableStateOf("") }
+    var confirm by remember { mutableStateOf("") }
+    var error by remember { mutableStateOf("") }
+    var loading by remember { mutableStateOf(false) }
     val scope = rememberCoroutineScope()
+
+    // Your requested strength logic - allows single type but rewards mixing
+    fun calculateStrength(pw: String): Pair<Int, String> {
+        if (pw.isEmpty()) return 0 to ""
+        if (pw.length < 6) return 1 to "Too short - min 6 chars"
+        var cats = 0
+        val hasLower = pw.any { it.isLowerCase() }
+        val hasUpper = pw.any { it.isUpperCase() }
+        val hasLetter = hasLower || hasUpper
+        val hasDigit = pw.any { it.isDigit() }
+        val hasSpecial = pw.any { !it.isLetterOrDigit() }
+        if (hasLetter) cats++
+        if (hasDigit) cats++
+        if (hasSpecial) cats++
+        if (hasLower && hasUpper) cats++ // bonus
+
+        var score = cats
+        if (pw.length >= 8) score++
+        if (pw.length >= 12) score++
+
+        return when {
+            score <= 1 -> 1 to "Weak - ${if(hasLetter && !hasDigit && !hasSpecial) "letters only" else if(hasDigit) "numbers only" else "special only"}"
+            score == 2 -> 2 to "Fair - mix types to strengthen"
+            score == 3 -> 3 to "Good"
+            else -> 4 to "Strong"
+        }
+    }
+
     Column(Modifier.fillMaxSize().padding(24.dp).verticalScroll(rememberScrollState()), verticalArrangement = Arrangement.Center) {
         Text("Create Account", style = MaterialTheme.typography.headlineMedium, fontWeight = FontWeight.Bold)
         Text("Join 100,000+ entrepreneurs", style = MaterialTheme.typography.bodyMedium, color = Color.Gray)
         Spacer(Modifier.height(20.dp))
+
         OutlinedTextField(value = name, onValueChange = { name = it }, label = { Text("Full Name") }, leadingIcon = { Icon(Icons.Default.Person, null) }, modifier = Modifier.fillMaxWidth())
         Spacer(Modifier.height(12.dp))
         OutlinedTextField(value = email, onValueChange = { email = it }, label = { Text("Email") }, leadingIcon = { Icon(Icons.Default.Email, null) }, modifier = Modifier.fillMaxWidth())
         Spacer(Modifier.height(12.dp))
+        
         OutlinedTextField(value = pass, onValueChange = { pass = it }, label = { Text("Password") }, leadingIcon = { Icon(Icons.Default.Lock, null) }, visualTransformation = PasswordVisualTransformation(), modifier = Modifier.fillMaxWidth())
-        if (pass.isNotEmpty()) { LinearProgressIndicator(progress = { (pass.length / 12f).coerceAtMost(1f) }, modifier = Modifier.fillMaxWidth().padding(top = 4.dp), color = if (pass.length >= 8) SME_Green else Color.Red) }
+        
+        // NEW STRENGTH INDICATOR
+        if (pass.isNotEmpty()) {
+            val (level, label) = calculateStrength(pass)
+            val color = when(level){1->Color(0xFFD32F2F); 2->Color(0xFFFF9800); 3->Color(0xFF1976D2); else->Color(0xFF1E8E3E)}
+            Column {
+                Spacer(Modifier.height(6.dp))
+                LinearProgressIndicator(progress = { level/4f }, modifier = Modifier.fillMaxWidth().height(6.dp).clip(RoundedCornerShape(3.dp)), color = color)
+                Spacer(Modifier.height(4.dp))
+                Text(label, style = MaterialTheme.typography.labelSmall, color = color)
+            }
+        }
+
         Spacer(Modifier.height(12.dp))
         OutlinedTextField(value = confirm, onValueChange = { confirm = it }, label = { Text("Confirm Password") }, leadingIcon = { Icon(Icons.Default.Lock, null) }, visualTransformation = PasswordVisualTransformation(), modifier = Modifier.fillMaxWidth(), isError = confirm.isNotEmpty() && confirm != pass)
+        
         if (error.isNotEmpty()) Text(error, color = Color.Red, style = MaterialTheme.typography.bodySmall)
         Spacer(Modifier.height(20.dp))
+        
         Button(onClick = {
             if (name.isBlank()) { error = "Enter name"; return@Button }
             if (!email.contains("@")) { error = "Invalid email"; return@Button }
             if (pass.length < 6) { error = "Password 6+ chars"; return@Button }
             if (pass != confirm) { error = "Passwords don't match"; return@Button }
-            loading = true
+            loading = true; error = ""
             scope.launch {
-                try { repo.register(email, pass, name); onDone() } catch (e: Exception) { if (e.message?.contains("API key") == true) onDone() else error = e.message ?: "Failed" }
+                try { 
+                    repo.register(email, pass, name); onDone() 
+                } catch (e: Exception) {
+                    // FIX FOR YOUR ERROR
+                    if (e.message?.contains("CONFIGURATION_NOT_FOUND") == true) {
+                        error = "Firebase config missing: Put google-services.json in app/ folder and Clean+Rebuild"
+                    } else if (e.message?.contains("API key") == true) {
+                        onDone() // allow offline demo
+                    } else {
+                        error = e.message ?: "Failed"
+                    }
+                }
                 loading = false
             }
         }, modifier = Modifier.fillMaxWidth().height(50.dp), colors = ButtonDefaults.buttonColors(containerColor = SME_Green)) {
@@ -198,8 +257,13 @@ private val SME_Green = Color(0xFF1E8E3E)
 
     Scaffold(
         topBar = {
-            TopAppBar(title = { Row(verticalAlignment = Alignment.CenterVertically) { Box(Modifier.size(32.dp).clip(RoundedCornerShape(8.dp)).background(SME_Green), contentAlignment = Alignment.Center) { Text("SME", color = Color.White, fontWeight = FontWeight.Bold, style = MaterialTheme.typography.labelSmall) }; Spacer(Modifier.width(8.dp)); Text("SME SOUTH AFRICA", fontWeight = FontWeight.Bold, style = MaterialTheme.typography.titleMedium) } },
-                actions = { IconButton(onClick = { load() }) { Icon(Icons.Default.Refresh, null) } })
+            TopAppBar(
+                title = { Row(verticalAlignment = Alignment.CenterVertically) { Box(Modifier.size(32.dp).clip(RoundedCornerShape(8.dp)).background(SME_Green), contentAlignment = Alignment.Center) { Text("SME", color = Color.White, fontWeight = FontWeight.Bold, style = MaterialTheme.typography.labelSmall) }; Spacer(Modifier.width(8.dp)); Text("SME SOUTH AFRICA", fontWeight = FontWeight.Bold, style = MaterialTheme.typography.titleMedium) } },
+                actions = {
+                    IconButton(onClick = { nav.navigate("help") }) { Icon(Icons.AutoMirrored.Filled.HelpOutline, "Help") }
+                    IconButton(onClick = { load() }) { Icon(Icons.Default.Refresh, "Refresh") }
+                }
+            )
         },
         bottomBar = { BottomBar(nav, "home") }
     ) { pad ->
@@ -453,7 +517,19 @@ private val SME_Green = Color(0xFF1E8E3E)
     
     LaunchedEffect(Unit) { prefs = repo.getPreferences(userId) }
     
-    Scaffold(bottomBar = { BottomBar(nav, "profile") }, topBar = { TopAppBar(title = { Text("Profile") }) }) { pad ->
+    Scaffold(
+        bottomBar = { BottomBar(nav, "profile") },
+        topBar = {
+            TopAppBar(
+                title = { Text("Profile") },
+                actions = {
+                    IconButton(onClick = { nav.navigate("help") }) {
+                        Icon(Icons.AutoMirrored.Filled.HelpOutline, "Help")
+                    }
+                }
+            )
+        }
+    ) { pad ->
         LazyColumn(Modifier.padding(pad).padding(16.dp)) {
             item {
                 Card(Modifier.fillMaxWidth(), colors = CardDefaults.cardColors(containerColor = Color(0xFFF6F9F6)), shape = RoundedCornerShape(16.dp)) {
@@ -481,6 +557,13 @@ private val SME_Green = Color(0xFF1E8E3E)
                         ListItem(headlineContent = { Text("Notifications") }, leadingContent = { Icon(Icons.Default.Notifications, null) }, trailingContent = { Switch(checked = true, onCheckedChange = {}) })
                         HorizontalDivider()
                         ListItem(headlineContent = { Text("Newsletter") }, leadingContent = { Icon(Icons.Default.Email, null) }, trailingContent = { Switch(checked = true, onCheckedChange = {}) })
+                        HorizontalDivider()
+                        ListItem(
+                            headlineContent = { Text("Help & Support") },
+                            leadingContent = { Icon(Icons.AutoMirrored.Filled.HelpOutline, null) },
+                            trailingContent = { Icon(Icons.Default.ChevronRight, null) },
+                            modifier = Modifier.clickable { nav.navigate("help") }
+                        )
                     }
                 }
                 Spacer(Modifier.height(16.dp))

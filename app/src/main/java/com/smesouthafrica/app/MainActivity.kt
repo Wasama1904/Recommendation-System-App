@@ -72,6 +72,9 @@ class MainActivity : ComponentActivity() {
                     composable("profile") {
                         ProfileScreen(repo = repo, nav = nav)
                     }
+                    composable("help") {
+                        HelpScreen(nav = nav)
+                    }
                 }
             }
         }
