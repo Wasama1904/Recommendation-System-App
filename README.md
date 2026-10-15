@@ -70,6 +70,16 @@ All behaviour is stored in Firestore collections: `behaviourLogs`, `searchLogs`,
 
 ---
 
+## 🎥 Video Demonstration
+
+Watch the complete application walkthrough and live feature demonstration on YouTube:
+
+[![Watch SME South Africa App Demo](https://img.shields.io/badge/YouTube-Watch%20Demo-red?style=for-the-badge&logo=youtube)](https://youtu.be/tlMr6KPmnDw)
+
+👉 **[Click here to watch the demonstration video on YouTube](https://youtu.be/tlMr6KPmnDw)**
+
+---
+
 ## 🛠️ Tech Stack
 
 - **Language:** Kotlin
