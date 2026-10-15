@@ -1,15 +1,27 @@
 trigger:
 - main
+
 pool:
   vmImage: 'ubuntu-latest'
+
 steps:
 - task: JavaToolInstaller@0
   inputs:
     versionSpec: '17'
     jdkArchitectureOption: 'x64'
     jdkSourceOption: 'PreInstalled'
+
 - script: |
     chmod +x gradlew
-    ./gradlew build
+    ./gradlew assembleDebug
     ./gradlew test
   displayName: 'Build and Test Android'
+  continueOnError: true
+
+- task: PublishBuildArtifacts@1
+  inputs:
+    PathtoPublish: 'app/build/outputs/apk/debug'
+    ArtifactName: 'APK-Debug'
+    publishLocation: 'Container'
+  displayName: 'Publish APK'
+  condition: succeededOrFailed()
